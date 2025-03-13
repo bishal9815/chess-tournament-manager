@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Tournament - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/quick-tournament-setup.html">Quick Setup</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div id="tournament-edit">
+      <div class="text-center py-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading tournament data...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Get tournament ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tournamentId = urlParams.get('id');
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Fetch tournament details
+    async function fetchTournamentDetails() {
+      try {
+        console.log('Fetching tournament details for ID:', tournamentId);
+        
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        
+        // Add authorization token if available
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('Adding authorization token to request');
+        } else {
+          console.error('No token found in localStorage');
+        }
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}`, {
+          headers
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to fetch tournament details:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch tournament details');
+        }
+        
+        const data = await response.json();
+        console.log('Tournament data received:', data);
+        
+        if (!data || !data.data || !data.data.tournament) {
+          console.error('Invalid tournament data format:', data);
+          throw new Error('Invalid tournament data received from server');
+        }
+        
+        return data.data.tournament;
+      } catch (error) {
+        console.error('Error fetching tournament details:', error);
+        document.getElementById('tournament-edit').innerHTML = `
+          <div class="alert alert-danger">
+            Failed to load tournament details: ${error.message}. Please try again later.
+            <br><br>
+            <a href="/tournaments" class="btn btn-primary">Back to Tournaments</a>
+          </div>
+        `;
+        return null;
+      }
+    }
+    
+    // Render tournament edit form
+    function renderTournamentEditForm(tournament) {
+      if (!tournament) {
+        document.getElementById('tournament-edit').innerHTML = `
+          <div class="alert alert-danger">
+            Failed to load tournament details. Please try again later.
+          </div>
+        `;
+        return;
+      }
+      
+      // Format dates for input fields
+      const startDate = new Date(tournament.startDate).toISOString().split('T')[0];
+      const endDate = new Date(tournament.endDate).toISOString().split('T')[0];
+      const registrationDeadline = tournament.registrationDeadline ? 
+        new Date(tournament.registrationDeadline).toISOString().split('T')[0] : '';
+      
+      // Generate HTML
+      let html = `
+        <div class="mb-4">
+          <a href="/tournament-details.html?id=${tournament._id}" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Tournament
+          </a>
+          <h1>Edit Tournament</h1>
+        </div>
+        
+        <div class="card">
+          <div class="card-body">
+            <form id="edit-tournament-form">
+              <div class="mb-3">
+                <label for="name" class="form-label">Tournament Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="${tournament.name}" required>
+              </div>
+              
+              <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3">${tournament.description || ''}</textarea>
+              </div>
+              
+              <div class="mb-3">
+                <label for="location" class="form-label">Location</label>
+                <input type="text" class="form-control" id="location" name="location" value="${tournament.location}" required>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="startDate" class="form-label">Start Date</label>
+                  <input type="date" class="form-control" id="startDate" name="startDate" value="${startDate}" required>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="endDate" class="form-label">End Date</label>
+                  <input type="date" class="form-control" id="endDate" name="endDate" value="${endDate}" required>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="registrationDeadline" class="form-label">Registration Deadline (Optional)</label>
+                <input type="date" class="form-control" id="registrationDeadline" name="registrationDeadline" value="${registrationDeadline}">
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="format" class="form-label">Tournament Format</label>
+                  <select class="form-select" id="format" name="format" required>
+                    <option value="Swiss" ${tournament.format === 'Swiss' ? 'selected' : ''}>Swiss</option>
+                    <option value="Round Robin" ${tournament.format === 'Round Robin' ? 'selected' : ''}>Round Robin</option>
+                    <option value="Knockout" ${tournament.format === 'Knockout' ? 'selected' : ''}>Knockout</option>
+                    <option value="Team" ${tournament.format === 'Team' ? 'selected' : ''}>Team</option>
+                    <option value="Custom" ${tournament.format === 'Custom' ? 'selected' : ''}>Custom</option>
+                  </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="rounds" class="form-label">Number of Rounds</label>
+                  <input type="number" class="form-control" id="rounds" name="rounds" min="1" value="${tournament.rounds}" required>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="timeControl" class="form-label">Time Control (Optional)</label>
+                  <input type="text" class="form-control" id="timeControl" name="timeControl" value="${tournament.timeControl || ''}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="maxParticipants" class="form-label">Maximum Participants (0 for unlimited)</label>
+                  <input type="number" class="form-control" id="maxParticipants" name="maxParticipants" min="0" value="${tournament.maxParticipants || 0}">
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="entryFee" class="form-label">Entry Fee (Optional)</label>
+                <input type="number" class="form-control" id="entryFee" name="entryFee" min="0" step="0.01" value="${tournament.entryFee || 0}">
+              </div>
+              
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/tournament-details.html?id=${tournament._id}" class="btn btn-outline-secondary">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('tournament-edit').innerHTML = html;
+      
+      // Add event listener for form submission
+      document.getElementById('edit-tournament-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateTournament(tournament._id);
+      });
+    }
+    
+    // Update tournament
+    async function updateTournament(tournamentId) {
+      try {
+        const form = document.getElementById('edit-tournament-form');
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Saving...';
+        
+        // Get form data
+        const formData = {
+          name: document.getElementById('name').value,
+          description: document.getElementById('description').value,
+          location: document.getElementById('location').value,
+          startDate: document.getElementById('startDate').value,
+          endDate: document.getElementById('endDate').value,
+          registrationDeadline: document.getElementById('registrationDeadline').value || null,
+          format: document.getElementById('format').value,
+          rounds: parseInt(document.getElementById('rounds').value),
+          timeControl: document.getElementById('timeControl').value || null,
+          maxParticipants: parseInt(document.getElementById('maxParticipants').value),
+          entryFee: parseFloat(document.getElementById('entryFee').value) || 0
+        };
+        
+        console.log('Updating tournament with data:', formData);
+        
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        
+        // Add authorization token if available
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('Adding authorization token to update request');
+        } else {
+          console.error('No token found in localStorage for update request');
+        }
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to update tournament:', errorData);
+          throw new Error(errorData.error || 'Failed to update tournament');
+        }
+        
+        const data = await response.json();
+        console.log('Tournament updated successfully:', data);
+        
+        alert('Tournament updated successfully!');
+        window.location.href = `/tournament-details.html?id=${tournamentId}`;
+      } catch (error) {
+        console.error('Error updating tournament:', error);
+        alert(`Error: ${error.message}`);
+        
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Save Changes';
+        }
+      }
+    }
+    
+    // Initialize
+    async function init() {
+      if (!tournamentId) {
+        document.getElementById('tournament-edit').innerHTML = `
+          <div class="alert alert-danger">
+            Invalid tournament ID. Please go back to the <a href="/tournaments">tournaments page</a>.
+          </div>
+        `;
+        return;
+      }
+      
+      try {
+        const tournament = await fetchTournamentDetails();
+        if (tournament) {
+          renderTournamentEditForm(tournament);
+        }
+      } catch (error) {
+        console.error('Error in initialization:', error);
+        document.getElementById('tournament-edit').innerHTML = `
+          <div class="alert alert-danger">
+            An error occurred while loading the tournament: ${error.message}
+            <br><br>
+            <a href="/tournaments" class="btn btn-primary">Back to Tournaments</a>
+          </div>
+        `;
+      }
+    }
+    
+    // Run initialization
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

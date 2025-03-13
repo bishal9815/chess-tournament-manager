@@ -1,0 +1,23 @@
+<!-- ... existing code ... -->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Public Tournaments</h1>
+    <div>
+      <!-- Only show Create Tournament if user is logged in -->
+      <?php if(isset($_SESSION['user_id'])): ?>
+        <button class="btn btn-primary dropdown-toggle" type="button" id="createTournamentBtn" data-bs-toggle="dropdown" aria-expanded="false">
+          Create Tournament
+        </button>
+        <!-- Dropdown menu for tournament creation -->
+        <ul class="dropdown-menu" aria-labelledby="createTournamentBtn">
+          <!-- ... dropdown items ... -->
+        </ul>
+      <?php else: ?>
+        <a href="login.php" class="btn btn-primary">Login</a>
+        <a href="register.php" class="btn btn-outline-primary">Register</a>
+      <?php endif; ?>
+    </div>
+  </div>
+  <!-- ... rest of the page content ... -->
+</div>
+<!-- ... existing code ... -->

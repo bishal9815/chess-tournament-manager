@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Registration - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .tab-button {
+      padding: 10px 15px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-bottom: none;
+      cursor: pointer;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+    }
+    
+    .tab-button.active {
+      background-color: #fff;
+      border-bottom: 2px solid #fff;
+      font-weight: bold;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      border-radius: 0 5px 5px 5px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .registration-tabs {
+      display: flex;
+      margin-bottom: -1px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+           
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="mb-4" id="tournament-title">Player Registration</h1>
+        
+        <div class="tournament-player-management">
+          <h2>Player Management</h2>
+          
+          <div class="row">
+            <div class="col-md-12 mb-4">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h3 class="card-title mb-0">Add Players</h3>
+                </div>
+                <div class="card-body">
+                  <div class="player-registration-container">
+                    <div class="registration-tabs">
+                      <button class="tab-button active" id="manual-tab">Manual Entry</button>
+                      <button class="tab-button" id="google-docs-tab">Google Docs</button>
+                      <button class="tab-button" id="file-tab">File Upload</button>
+                    </div>
+                    
+                    <div id="alert-container"></div>
+                    
+                    <div id="manual-content" class="tab-content active">
+                      <form id="manual-player-form" class="mt-3">
+                        <div class="row">
+                          <div class="col-md-6 mb-3">
+                            <label for="firstName" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" required>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                            <label for="lastName" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" required>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                          </div>
+                          <div class="col-md-6 mb-3">
+                            <label for="chessRating" class="form-label">Chess Rating</label>
+                            <input type="number" class="form-control" id="chessRating" name="chessRating" min="0" max="3000">
+                          </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Player</button>
+                      </form>
+                    </div>
+                    
+                    <div id="google-docs-content" class="tab-content">
+                      <div class="mt-3">
+                        <h4>Google Docs Integration</h4>
+                        <p>
+                          Use Google Docs to collect player registrations for your tournament. 
+                          Create a registration form that participants can fill out, and the data 
+                          will be automatically synced to your tournament.
+                        </p>
+                        
+                        <div id="google-docs-status">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          <p>Checking Google Docs status...</p>
+                        </div>
+                        
+                        <div id="google-docs-not-configured" style="display: none;">
+                          <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            No Google Docs has been configured for this tournament yet.
+                          </div>
+                          
+                          <button id="create-google-doc-btn" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-text"></i> Create Google Doc
+                          </button>
+                        </div>
+                        
+                        <div id="google-docs-configured" style="display: none;">
+                          <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            Google Docs integration is active for this tournament.
+                          </div>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">Registration Form Link</label>
+                            <div class="input-group">
+                              <input type="text" id="google-doc-url-input" class="form-control" readonly>
+                              <button class="btn btn-outline-secondary" type="button" id="copy-link-btn">
+                                <i class="bi bi-clipboard"></i> Copy
+                              </button>
+                            </div>
+                            <div class="form-text">
+                              Share this link with participants to register for the tournament.
+                            </div>
+                          </div>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">Last Synchronized</label>
+                            <p id="last-sync-time">Never</p>
+                          </div>
+                          
+                          <button id="sync-google-doc-btn" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Sync Now
+                          </button>
+                          
+                          <a href="#" id="open-google-doc-btn" target="_blank" class="btn btn-primary ms-2">
+                            <i class="bi bi-box-arrow-up-right"></i> Open in Google Docs
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div id="file-content" class="tab-content">
+                      <form id="file-upload-form" class="mt-3">
+                        <div class="mb-3">
+                          <label for="playerFile" class="form-label">Upload Player List *</label>
+                          <input type="file" class="form-control" id="playerFile" name="playerFile" accept=".xlsx,.xls,.doc,.docx,.csv" required>
+                        </div>
+                        <div class="mb-3">
+                          <p class="form-text">
+                            <strong>Supported formats:</strong> Excel (.xlsx, .xls), Word (.doc, .docx), CSV (.csv)
+                          </p>
+                          <p class="form-text">
+                            <strong>File structure:</strong> Your file should contain columns/fields for player names, emails, and ratings.
+                          </p>
+                          <p class="form-text">
+                            <strong>Example Excel/CSV format:</strong> First Name, Last Name, Email, Rating
+                          </p>
+                          <p class="form-text">
+                            <strong>Example Word format:</strong> One player per line with comma-separated values (First Name, Last Name, Email, Rating)
+                          </p>
+                        </div>
+                        <div class="mb-3">
+                          <a href="/templates/players_template.xlsx" class="btn btn-outline-secondary btn-sm" download>
+                            Download Excel Template
+                          </a>
+                          <a href="/templates/players_template.docx" class="btn btn-outline-secondary btn-sm ms-2" download>
+                            Download Word Template
+                          </a>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Players</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h3 class="card-title mb-0">Registered Players</h3>
+                </div>
+                <div class="card-body">
+                  <div id="players-table-container">
+                    <!-- Players table will be loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    // Get tournament ID from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const tournamentId = urlParams.get('tournamentId') || localStorage.getItem('currentTournamentId');
+    const token = localStorage.getItem('token');
+    
+    // Show alert message
+    function showAlert(message, type = 'success') {
+      const alertContainer = document.getElementById('alert-container');
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      `;
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        const alert = alertContainer.querySelector('.alert');
+        if (alert) {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        }
+      }, 5000);
+    }
+    
+    // Fetch tournament details and registered players
+    async function fetchTournamentDetails() {
+      if (!tournamentId) {
+        showAlert('No tournament selected. Please create or select a tournament first.', 'warning');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/tournaments/${tournamentId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tournament details');
+        }
+        
+        const data = await response.json();
+        document.getElementById('tournament-title').textContent = `Player Registration: ${data.data.tournament.name}`;
+        
+        // Render registered players
+        renderPlayersTable(data.data.tournament.participants);
+        
+        // Check Google Docs status
+        checkGoogleDocsStatus(data.data.tournament);
+      } catch (error) {
+        console.error('Error fetching tournament details:', error);
+        showAlert('Error loading tournament details: ' + error.message, 'danger');
+      }
+    }
+    
+    // Check Google Docs status for the tournament
+    function checkGoogleDocsStatus(tournament) {
+      const statusContainer = document.getElementById('google-docs-status');
+      const notConfiguredContainer = document.getElementById('google-docs-not-configured');
+      const configuredContainer = document.getElementById('google-docs-configured');
+      
+      // Hide the loading spinner
+      statusContainer.style.display = 'none';
+      
+      if (tournament.googleDocs && tournament.googleDocs.documentId) {
+        // Google Docs is configured
+        notConfiguredContainer.style.display = 'none';
+        configuredContainer.style.display = 'block';
+        
+        // Set the Google Doc URL
+        const urlInput = document.getElementById('google-doc-url-input');
+        urlInput.value = tournament.googleDocs.documentUrl;
+        
+        // Set the open button URL
+        const openButton = document.getElementById('open-google-doc-btn');
+        openButton.href = tournament.googleDocs.documentUrl;
+        
+        // Set the last sync time
+        const lastSyncTime = document.getElementById('last-sync-time');
+        if (tournament.googleDocs.lastSyncDate) {
+          lastSyncTime.textContent = new Date(tournament.googleDocs.lastSyncDate).toLocaleString();
+        } else {
+          lastSyncTime.textContent = 'Never';
+        }
+      } 
+      // For backward compatibility, also check for Google Sheets
+      else if (tournament.googleSheets && tournament.googleSheets.spreadsheetId) {
+        // Legacy Google Sheets is configured
+        notConfiguredContainer.style.display = 'none';
+        configuredContainer.style.display = 'block';
+        
+        // Set the Google Sheet URL
+        const urlInput = document.getElementById('google-doc-url-input');
+        urlInput.value = tournament.googleSheets.spreadsheetUrl;
+        
+        // Set the open button URL
+        const openButton = document.getElementById('open-google-doc-btn');
+        openButton.href = tournament.googleSheets.spreadsheetUrl;
+        
+        // Set the last sync time
+        const lastSyncTime = document.getElementById('last-sync-time');
+        if (tournament.googleSheets.lastSyncDate) {
+          lastSyncTime.textContent = new Date(tournament.googleSheets.lastSyncDate).toLocaleString();
+        } else {
+          lastSyncTime.textContent = 'Never';
+        }
+        
+        // Show a migration notice
+        showAlert('This tournament is using the legacy Google Sheets integration. We recommend migrating to Google Docs for better features and support.', 'warning');
+      } else {
+        // Google Docs is not configured
+        notConfiguredContainer.style.display = 'block';
+        configuredContainer.style.display = 'none';
+      }
+    }
+    
+    // Render players table
+    function renderPlayersTable(participants) {
+      const container = document.getElementById('players-table-container');
+      
+      if (!participants || participants.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No players registered yet.</div>';
+        return;
+      }
+      
+      let html = `
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Rating</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      participants.forEach((participant, index) => {
+        const player = participant.player;
+        if (!player) return;
+        
+        const status = participant.confirmed ? 
+          '<span class="badge bg-success">Confirmed</span>' : 
+          '<span class="badge bg-warning text-dark">Pending</span>';
+        
+        const paidStatus = participant.paid ? 
+          '<span class="badge bg-info ms-1">Paid</span>' : '';
+        
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${player.firstName || ''} ${player.lastName || ''}</td>
+            <td>${player.email || 'N/A'}</td>
+            <td>${player.chessRating || 'N/A'}</td>
+            <td>${status} ${paidStatus}</td>
+            <td>
+              <button class="btn btn-sm btn-danger remove-player-btn" data-player-id="${player._id}">
+                <i class="bi bi-trash"></i> Remove
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+      
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.remove-player-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const playerId = this.getAttribute('data-player-id');
+          removePlayer(playerId);
+        });
+      });
+    }
+    
+    // Remove player from tournament
+    async function removePlayer(playerId) {
+      if (!confirm('Are you sure you want to remove this player from the tournament?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/tournaments/${tournamentId}/players/${playerId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to remove player');
+        }
+        
+        showAlert('Player removed successfully', 'success');
+        fetchTournamentDetails();
+      } catch (error) {
+        console.error('Error removing player:', error);
+        showAlert('Error removing player: ' + error.message, 'danger');
+      }
+    }
+    
+    // Add player manually
+    async function addPlayer(playerData) {
+      try {
+        const response = await fetch(`/api/tournaments/${tournamentId}/players`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            players: [playerData]
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to add player');
+        }
+        
+        const data = await response.json();
+        showAlert('Player added successfully', 'success');
+        fetchTournamentDetails();
+        
+        // Reset form
+        document.getElementById('manual-player-form').reset();
+      } catch (error) {
+        console.error('Error adding player:', error);
+        showAlert('Error adding player: ' + error.message, 'danger');
+      }
+    }
+    
+    // Upload players from file
+    async function uploadPlayersFile(formData) {
+      try {
+        const response = await fetch(`/api/tournaments/${tournamentId}/players/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload players');
+        }
+        
+        const data = await response.json();
+        showAlert(`Successfully added ${data.count} players from file`, 'success');
+        fetchTournamentDetails();
+        
+        // Reset form
+        document.getElementById('file-upload-form').reset();
+      } catch (error) {
+        console.error('Error uploading players:', error);
+        showAlert('Error uploading players: ' + error.message, 'danger');
+      }
+    }
+    
+    // Create Google Doc for tournament
+    async function createGoogleDoc() {
+      try {
+        const createButton = document.getElementById('create-google-doc-btn');
+        createButton.disabled = true;
+        createButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+        
+        console.log('Creating Google Doc for tournament:', tournamentId);
+        
+        const response = await fetch(`/api/google/tournaments/${tournamentId}/create-doc`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Log the response status
+        console.log('Response status:', response.status);
+        
+        // Parse the response body
+        const responseText = await response.text();
+        console.log('Response body:', responseText);
+        
+        // Try to parse as JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Error parsing response as JSON:', e);
+        }
+        
+        if (!response.ok) {
+          const errorMessage = data && data.error ? data.error : 'Failed to create Google Doc';
+          throw new Error(errorMessage);
+        }
+        
+        showAlert('Google Doc created successfully', 'success');
+        
+        // Refresh tournament details to show the new Google Doc
+        fetchTournamentDetails();
+      } catch (error) {
+        console.error('Error creating Google Doc:', error);
+        showAlert('Error creating Google Doc: ' + error.message, 'danger');
+        
+        // Reset button
+        const createButton = document.getElementById('create-google-doc-btn');
+        createButton.disabled = false;
+        createButton.innerHTML = '<i class="bi bi-file-earmark-text"></i> Create Google Doc';
+      }
+    }
+    
+    // Sync players from Google Doc
+    async function syncGoogleDoc() {
+      try {
+        const syncButton = document.getElementById('sync-google-doc-btn');
+        syncButton.disabled = true;
+        syncButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Syncing...';
+        
+        const response = await fetch(`/api/google/tournaments/${tournamentId}/sync-doc`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to sync Google Doc');
+        }
+        
+        const data = await response.json();
+        showAlert(`Successfully synced ${data.data.playersAdded} players from Google Doc`, 'success');
+        
+        // Refresh tournament details to show the new players
+        fetchTournamentDetails();
+      } catch (error) {
+        console.error('Error syncing Google Doc:', error);
+        showAlert('Error syncing Google Doc: ' + error.message, 'danger');
+      } finally {
+        // Reset button
+        const syncButton = document.getElementById('sync-google-doc-btn');
+        syncButton.disabled = false;
+        syncButton.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sync Now';
+      }
+    }
+    
+    // Copy Google Doc URL to clipboard
+    function copyGoogleDocUrl() {
+      const urlInput = document.getElementById('google-doc-url-input');
+      urlInput.select();
+      document.execCommand('copy');
+      
+      // Show tooltip
+      showAlert('Link copied to clipboard', 'success');
+    }
+    
+    // Tab switching functionality
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.tab-button');
+      const contents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          // Remove active class from all tabs and contents
+          tabs.forEach(t => t.classList.remove('active'));
+          contents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          this.classList.add('active');
+          
+          // Show corresponding content
+          const contentId = this.id.replace('-tab', '-content');
+          document.getElementById(contentId).classList.add('active');
+        });
+      });
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Setup tabs
+      setupTabs();
+      
+      // Fetch tournament details
+      fetchTournamentDetails();
+      
+      // Manual player form submission
+      document.getElementById('manual-player-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const playerData = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          email: document.getElementById('email').value,
+          chessRating: document.getElementById('chessRating').value
+        };
+        
+        addPlayer(playerData);
+      });
+      
+      // File upload form submission
+      document.getElementById('file-upload-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('playerFile');
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showAlert('Please select a file to upload', 'warning');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('playersFile', fileInput.files[0]);
+        
+        uploadPlayersFile(formData);
+      });
+      
+      // Create Google Doc button
+      document.getElementById('create-google-doc-btn').addEventListener('click', createGoogleDoc);
+      
+      // Sync Google Doc button
+      document.getElementById('sync-google-doc-btn').addEventListener('click', syncGoogleDoc);
+      
+      // Copy Google Doc URL button
+      document.getElementById('copy-link-btn').addEventListener('click', copyGoogleDocUrl);
+      
+      // Check if user is logged in
+      if (!token) {
+        showAlert('Please log in to manage tournament players', 'warning');
+      }
+      
+      // Add a "Done" button to go back to tournament details
+      const doneButton = document.createElement('button');
+      doneButton.className = 'btn btn-primary mt-4';
+      doneButton.innerHTML = '<i class="bi bi-check-circle"></i> Done - Go to Tournament';
+      doneButton.addEventListener('click', function() {
+        console.log('Redirecting to tournament details with ID:', tournamentId);
+        // Store the tournament ID in localStorage for persistence
+        localStorage.setItem('currentTournamentId', tournamentId);
+        // Redirect to the tournament details page
+        window.location.href = `/tournament-details.html?id=${tournamentId}`;
+      });
+      
+      // Add the button to the page
+      document.querySelector('.tournament-player-management').appendChild(doneButton);
+    });
+  </script>
+</body>
+</html> 

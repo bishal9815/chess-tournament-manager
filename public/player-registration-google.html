@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Registration - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .tab-button {
+      padding: 10px 15px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-bottom: none;
+      cursor: pointer;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+    }
+    
+    .tab-button.active {
+      background-color: #fff;
+      border-bottom: 2px solid #fff;
+      font-weight: bold;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      border-radius: 0 5px 5px 5px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .registration-tabs {
+      display: flex;
+      margin-bottom: -1px;
+    }
+    
+    /* Add spinning animation for the sync icon */
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="mb-4" id="tournament-title">Player Registration</h1>
+        
+        <div class="tournament-player-management">
+          <h2>Player Management</h2>
+          
+          <div class="row">
+            <div class="col-md-12 mb-4">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h3 class="card-title mb-0">Add Players</h3>
+                </div>
+                <div class="card-body">
+                  <div class="player-registration-container">
+                    <div class="registration-tabs">
+                      <button class="tab-button active" id="manual-tab">Manual Entry</button>
+                      <button class="tab-button" id="google-docs-tab">Google Form</button>
+                      <button class="tab-button" id="file-tab">File Upload</button>
+                    </div>
+                    
+                    <div id="alert-container"></div>
+                    
+                    <div id="manual-content" class="tab-content active">
+                      <form id="manual-player-form" class="mt-3">
+                        <div class="row">
+                          <div class="col-md-6 mb-3">
+                            <label for="firstName" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" required>
+                            <div class="form-text">Required</div>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                            <label for="lastName" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" required>
+                            <div class="form-text">Required</div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                            <div class="form-text">Optional</div>
+                          </div>
+                          <div class="col-md-6 mb-3">
+                            <label for="chessRating" class="form-label">Chess Rating</label>
+                            <input type="number" class="form-control" id="chessRating" name="chessRating" min="0" max="3000">
+                            <div class="form-text">Optional</div>
+                          </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Player</button>
+                      </form>
+                    </div>
+                    
+                    <div id="google-docs-content" class="tab-content">
+                      <div class="mt-3">
+                        <h4>Google Form</h4>
+                        <p>
+                          Use Google services to collect player registrations for your tournament.
+                        </p>
+                        
+                        <div class="form-group mt-3">
+                          <h5>Google Form Integration</h5>
+                          <p class="mb-3">
+                            Google Form allows you to create a registration form with fields for first name, last name, email, and chess rating.
+                            Players can fill out the form, and the data will be automatically synced to your tournament.
+                          </p>
+                          
+                          <div class="form-group mt-3">
+                            <div class="form-check">
+                              <input class="form-check-input" type="checkbox" id="forceSyncCheckbox">
+                              <label class="form-check-label" for="forceSyncCheckbox">
+                                Force Sync (Re-sync all players, even if they've been added before)
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div id="google-status">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          <p>Checking Google integration status...</p>
+                        </div>
+                        
+                        <div id="google-not-configured" style="display: none;">
+                          <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <span id="google-not-configured-message">No Google integration has been configured for this tournament yet.</span>
+                          </div>
+                          
+                          <div class="mb-3">
+                            <button id="authenticate-google-btn" class="btn btn-primary mb-3">
+                              <i class="bi bi-google"></i> Connect with Google
+                            </button>
+                            <p class="form-text">
+                              You need to authenticate with Google before creating a Google integration.
+                            </p>
+                          </div>
+                          
+                          <button id="create-google-form-btn" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-text"></i> Create Google Form
+                          </button>
+                        </div>
+                        
+                        <div id="google-configured" style="display: none;">
+                          <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <span id="google-configured-message">Google integration is active for this tournament.</span>
+                          </div>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">Registration Link</label>
+                            <div class="input-group">
+                              <input type="text" id="google-url-input" class="form-control" readonly>
+                              <button class="btn btn-outline-secondary" type="button" id="copy-link-btn">
+                                <i class="bi bi-clipboard"></i> Copy
+                              </button>
+                            </div>
+                            <div class="form-text">
+                              Share this link with participants to register for the tournament.
+                            </div>
+                          </div>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">Last Synchronized</label>
+                            <p id="last-sync-time">Never</p>
+                          </div>
+                          
+                          <button id="sync-google-btn" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Sync Now
+                          </button>
+                          
+                          <a href="#" id="open-google-btn" target="_blank" class="btn btn-primary ms-2">
+                            <i class="bi bi-box-arrow-up-right"></i> Open in Google
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div id="file-content" class="tab-content">
+                      <form id="file-upload-form" class="mt-3">
+                        <div class="mb-3">
+                          <label for="playerFile" class="form-label">Upload Player List *</label>
+                          <input type="file" class="form-control" id="playerFile" name="playerFile" accept=".xlsx,.xls,.doc,.docx,.csv" required>
+                        </div>
+                        <div class="mb-3">
+                          <p class="form-text">
+                            <strong>Supported formats:</strong> Excel (.xlsx, .xls), Word (.doc, .docx), CSV (.csv)
+                          </p>
+                          <p class="form-text">
+                            <strong>File structure:</strong> Your file should contain columns/fields for player names, emails, and ratings.
+                          </p>
+                          <p class="form-text">
+                            <strong>Example Excel/CSV format:</strong> First Name, Last Name, Email, Rating
+                          </p>
+                          <p class="form-text">
+                            <strong>Example Word format:</strong> One player per line with comma-separated values (First Name, Last Name, Email, Rating)
+                          </p>
+                        </div>
+                        <div class="mb-3">
+                          <a href="/templates/players_template.xlsx" class="btn btn-outline-secondary btn-sm" download>
+                            Download Excel Template
+                          </a>
+                          <a href="/templates/players_template.docx" class="btn btn-outline-secondary btn-sm ms-2" download>
+                            Download Word Template
+                          </a>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Players</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Registered Players</h3>
+                    <button id="refresh-players-btn" class="btn btn-sm btn-light">
+                      <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div id="players-table-container">
+                    <!-- Players table will be loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    // Get tournament ID from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const tournamentId = urlParams.get('tournamentId') || localStorage.getItem('currentTournamentId');
+    const token = localStorage.getItem('token');
+    
+    console.log('Tournament ID from URL or localStorage:', tournamentId);
+    
+    // Show alert message
+    function showAlert(message, type = 'success') {
+      const alertContainer = document.getElementById('alert-container');
+      
+      // Create a fixed position container if it doesn't exist
+      let fixedAlertContainer = document.getElementById('fixed-alert-container');
+      if (!fixedAlertContainer) {
+        fixedAlertContainer = document.createElement('div');
+        fixedAlertContainer.id = 'fixed-alert-container';
+        fixedAlertContainer.style.position = 'fixed';
+        fixedAlertContainer.style.top = '20px';
+        fixedAlertContainer.style.left = '50%';
+        fixedAlertContainer.style.transform = 'translateX(-50%)';
+        fixedAlertContainer.style.zIndex = '9999';
+        fixedAlertContainer.style.maxWidth = '90%';
+        fixedAlertContainer.style.width = '500px';
+        document.body.appendChild(fixedAlertContainer);
+      }
+      
+      // Create the alert element
+      const alertElement = document.createElement('div');
+      alertElement.className = `alert alert-${type} alert-dismissible fade show`;
+      alertElement.role = 'alert';
+      alertElement.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      
+      // Add some shadow and border radius for a nicer appearance
+      alertElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+      alertElement.style.borderRadius = '8px';
+      
+      // Add to the fixed container
+      fixedAlertContainer.appendChild(alertElement);
+      
+      // Create Bootstrap alert instance
+      const bsAlert = new bootstrap.Alert(alertElement);
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        bsAlert.close();
+        // Remove from DOM after transition
+        setTimeout(() => {
+          if (alertElement.parentNode === fixedAlertContainer) {
+            fixedAlertContainer.removeChild(alertElement);
+          }
+        }, 500);
+      }, 5000);
+    }
+    
+    // Show loading indicator
+    function showLoading(message = 'Loading...') {
+      // Create loading overlay if it doesn't exist
+      let loadingOverlay = document.getElementById('loading-overlay');
+      if (!loadingOverlay) {
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'loading-overlay';
+        loadingOverlay.style.position = 'fixed';
+        loadingOverlay.style.top = '0';
+        loadingOverlay.style.left = '0';
+        loadingOverlay.style.width = '100%';
+        loadingOverlay.style.height = '100%';
+        loadingOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        loadingOverlay.style.display = 'flex';
+        loadingOverlay.style.justifyContent = 'center';
+        loadingOverlay.style.alignItems = 'center';
+        loadingOverlay.style.zIndex = '9999';
+        
+        const loadingContent = document.createElement('div');
+        loadingContent.style.backgroundColor = 'white';
+        loadingContent.style.padding = '20px';
+        loadingContent.style.borderRadius = '5px';
+        loadingContent.style.textAlign = 'center';
+        
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner-border text-primary';
+        spinner.setAttribute('role', 'status');
+        
+        const loadingText = document.createElement('div');
+        loadingText.id = 'loading-text';
+        loadingText.style.marginTop = '10px';
+        
+        loadingContent.appendChild(spinner);
+        loadingContent.appendChild(loadingText);
+        loadingOverlay.appendChild(loadingContent);
+        document.body.appendChild(loadingOverlay);
+      }
+      
+      // Update loading message
+      document.getElementById('loading-text').textContent = message;
+      
+      // Show the overlay
+      loadingOverlay.style.display = 'flex';
+    }
+    
+    // Hide loading indicator
+    function hideLoading() {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+    
+    // Helper function to get URL parameters
+    function getUrlParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    
+    // Load players for the tournament
+    async function loadPlayers() {
+      try {
+        if (!tournamentId) {
+          showAlert('No tournament selected. Please create or select a tournament first.', 'warning');
+          return;
+        }
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}/players`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch players');
+        }
+        
+        const data = await response.json();
+        
+        // Update the players table
+        if (data.success && data.data && data.data.participants) {
+          renderPlayersTable(data.data.participants);
+        } else {
+          renderPlayersTable([]);
+        }
+      } catch (error) {
+        console.error('Error loading players:', error);
+        showAlert('Error loading players: ' + error.message, 'danger');
+      }
+    }
+    
+    // Fetch tournament details and registered players
+    async function fetchTournamentDetails() {
+      if (!tournamentId) {
+        showAlert('No tournament selected. Please create or select a tournament first.', 'warning');
+        return;
+      }
+      
+      try {
+        console.log('Fetching tournament details for ID:', tournamentId);
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tournament details');
+        }
+        
+        const data = await response.json();
+        console.log('Tournament data received:', data);
+        
+        document.getElementById('tournament-title').textContent = `Player Registration: ${data.data.tournament.name}`;
+        
+        // Render registered players
+        console.log('Rendering player table with participants:', data.data.tournament.participants?.length || 0);
+        renderPlayersTable(data.data.tournament.participants || []);
+        
+        // Check Google Docs status
+        checkGoogleDocsStatus(data.data.tournament);
+      } catch (error) {
+        console.error('Error fetching tournament details:', error);
+        showAlert('Error loading tournament details: ' + error.message, 'danger');
+      }
+    }
+    
+    // Check Google integration status for the tournament
+    function checkGoogleDocsStatus(tournament) {
+      const statusContainer = document.getElementById('google-status');
+      const notConfiguredContainer = document.getElementById('google-not-configured');
+      const configuredContainer = document.getElementById('google-configured');
+      
+      // Hide the loading spinner
+      statusContainer.style.display = 'none';
+      
+      // Check if we have Google Forms integration
+      if (tournament.googleForms && tournament.googleForms.formId) {
+        // Google Forms is configured
+        notConfiguredContainer.style.display = 'none';
+        configuredContainer.style.display = 'block';
+        
+        // Set the Google Form URL - use responseUrl for sharing with participants
+        const urlInput = document.getElementById('google-url-input');
+        urlInput.value = tournament.googleForms.responseUrl || tournament.googleForms.formUrl;
+        
+        // Set the open button URL - use formUrl for editing
+        const openButton = document.getElementById('open-google-btn');
+        openButton.href = tournament.googleForms.formUrl;
+        
+        // Set the last sync time
+        const lastSyncTime = document.getElementById('last-sync-time');
+        if (tournament.googleForms.lastSyncDate) {
+          lastSyncTime.textContent = new Date(tournament.googleForms.lastSyncDate).toLocaleString();
+        } else {
+          lastSyncTime.textContent = 'Never';
+        }
+        
+        // Update the configured message
+        document.getElementById('google-configured-message').textContent = 'Google Form integration is active for this tournament.';
+        
+        // Update the Google connect button to show that user is connected
+        updateGoogleConnectButton(true);
+      } 
+      // For backward compatibility, also check for Google Sheets
+      else if (tournament.googleSheets && tournament.googleSheets.spreadsheetId) {
+        // Legacy Google Sheets is configured
+        notConfiguredContainer.style.display = 'none';
+        configuredContainer.style.display = 'block';
+        
+        // Set the Google Sheet URL
+        const urlInput = document.getElementById('google-url-input');
+        urlInput.value = tournament.googleSheets.spreadsheetUrl;
+        
+        // Set the open button URL
+        const openButton = document.getElementById('open-google-btn');
+        openButton.href = tournament.googleSheets.spreadsheetUrl;
+        
+        // Set the last sync time
+        const lastSyncTime = document.getElementById('last-sync-time');
+        if (tournament.googleSheets.lastSyncDate) {
+          lastSyncTime.textContent = new Date(tournament.googleSheets.lastSyncDate).toLocaleString();
+        } else {
+          lastSyncTime.textContent = 'Never';
+        }
+        
+        // Update the configured message
+        document.getElementById('google-configured-message').textContent = 'Google Sheets integration is active for this tournament.';
+        
+        // Update the Google connect button to show that user is connected
+        updateGoogleConnectButton(true);
+        
+        // Show a migration notice
+        showAlert('This tournament is using the legacy Google Sheets integration. We recommend migrating to Google Forms for better features and support.', 'warning');
+      } else {
+        // Google integration is not configured
+        notConfiguredContainer.style.display = 'block';
+        configuredContainer.style.display = 'none';
+        
+        // Update the not configured message
+        document.getElementById('google-not-configured-message').textContent = 'No Google Form has been configured for this tournament yet.';
+        
+        // Check if user is already authenticated with Google
+        checkGoogleAuthStatus();
+      }
+    }
+    
+    // Sync players from Google integration
+    async function syncGoogleData() {
+      try {
+        // Show a syncing message in the alert container instead of full-page overlay
+        const forceSync = document.getElementById('forceSyncCheckbox').checked;
+        const syncMessage = forceSync ? 
+          '<i class="bi bi-arrow-repeat spin"></i> Force syncing ALL data from Google Form...' : 
+          '<i class="bi bi-arrow-repeat spin"></i> Syncing new data from Google Form...';
+        
+        showAlert(syncMessage, 'info');
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+          showAlert('You must be logged in to sync data', 'danger');
+          return;
+        }
+        
+        const tournamentId = getUrlParameter('tournamentId') || localStorage.getItem('currentTournamentId');
+        if (!tournamentId) {
+          showAlert('Tournament ID is required', 'danger');
+          return;
+        }
+        
+        try {
+          // Always use the sync-form endpoint
+          const endpoint = `/api/google/tournaments/${tournamentId}/sync-form`;
+          
+          console.log(`Syncing data from Google Form endpoint:`, endpoint);
+          console.log(`Force sync: ${forceSync} (type: ${typeof forceSync})`);
+          
+          // Create the request body with the forceSync parameter
+          const requestBody = { forceSync: forceSync };
+          console.log('Request body:', JSON.stringify(requestBody));
+          
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+          });
+          
+          console.log('Response status:', response.status);
+          
+          // Get the full response text for debugging
+          const responseText = await response.text();
+          console.log('Response text:', responseText);
+          
+          // Try to parse the response as JSON
+          let data;
+          try {
+            data = JSON.parse(responseText);
+            console.log('Parsed response data:', data);
+          } catch (parseError) {
+            console.error('Error parsing response as JSON:', parseError);
+            throw new Error(`Failed to parse response: ${responseText}`);
+          }
+          
+          if (!response.ok) {
+            const errorMessage = data && data.error ? data.error : 'Failed to sync data';
+            throw new Error(errorMessage);
+          }
+          
+          // Check if the response has the expected structure
+          if (!data) {
+            throw new Error('Empty response received from server');
+          }
+          
+          // Handle success response
+          if (data.success) {
+            // Update the last sync time
+            const lastSyncTime = document.getElementById('last-sync-time');
+            if (lastSyncTime) {
+              lastSyncTime.textContent = new Date().toLocaleString();
+            }
+            
+            // Show success message with details from the server
+            showAlert(data.message || 'Sync completed successfully', 'success');
+            
+            // Reload the player list
+            fetchTournamentDetails();
+          } else {
+            // Handle error response
+            showAlert(data.error || 'Failed to sync data', 'danger');
+          }
+        } catch (error) {
+          console.error('Error syncing data:', error);
+          showAlert(`Error syncing data: ${error.message}`, 'danger');
+        }
+      } catch (error) {
+        console.error('Error in syncGoogleData:', error);
+        showAlert(`Error: ${error.message}`, 'danger');
+      }
+    }
+    
+    // Copy Google URL to clipboard
+    function copyGoogleUrl() {
+      const urlInput = document.getElementById('google-url-input');
+      urlInput.select();
+      document.execCommand('copy');
+      
+      // Show tooltip
+      showAlert('Link copied to clipboard', 'success');
+    }
+    
+    // Tab switching functionality
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.tab-button');
+      const contents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          // Remove active class from all tabs and contents
+          tabs.forEach(t => t.classList.remove('active'));
+          contents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          this.classList.add('active');
+          
+          // Show corresponding content
+          const contentId = this.id.replace('-tab', '-content');
+          document.getElementById(contentId).classList.add('active');
+        });
+      });
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Setup tabs
+      setupTabs();
+      
+      // Fetch tournament details
+      fetchTournamentDetails();
+      
+      // Check for Google auth success
+      checkGoogleAuthSuccess();
+      
+      // Manual player form submission
+      document.getElementById('manual-player-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const playerData = {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          email: document.getElementById('email').value,
+          chessRating: document.getElementById('chessRating').value
+        };
+        
+        addPlayer(playerData);
+      });
+      
+      // File upload form submission
+      document.getElementById('file-upload-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('playerFile');
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showAlert('Please select a file to upload', 'warning');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('playersFile', fileInput.files[0]);
+        
+        uploadPlayersFile(formData);
+      });
+      
+      // Create Google Form button
+      document.getElementById('create-google-form-btn').addEventListener('click', createGoogleForm);
+      
+      // Google authentication button
+      document.getElementById('authenticate-google-btn').addEventListener('click', authenticateWithGoogle);
+      
+      // Sync Google button
+      document.getElementById('sync-google-btn').addEventListener('click', syncGoogleData);
+      
+      // Copy Google URL button
+      document.getElementById('copy-link-btn').addEventListener('click', copyGoogleUrl);
+      
+      // Refresh players button
+      document.getElementById('refresh-players-btn').addEventListener('click', function() {
+        showAlert('<i class="bi bi-arrow-clockwise spin"></i> Refreshing player list...', 'info');
+        fetchTournamentDetails();
+      });
+      
+      // Check if user is logged in
+      if (!token) {
+        showAlert('Please log in to manage tournament players', 'warning');
+      }
+      
+      // Add a "Done" button to go back to tournament details
+      const doneButton = document.createElement('button');
+      doneButton.className = 'btn btn-primary mt-4';
+      doneButton.innerHTML = '<i class="bi bi-check-circle"></i> Done - Go to Tournament';
+      doneButton.addEventListener('click', function() {
+        console.log('Redirecting to tournament details with ID:', tournamentId);
+        // Store the tournament ID in localStorage for persistence
+        localStorage.setItem('currentTournamentId', tournamentId);
+        // Redirect to the tournament details page
+        window.location.href = `/tournament-details.html?id=${tournamentId}`;
+      });
+      
+      // Add the button to the page
+      document.querySelector('.tournament-player-management').appendChild(doneButton);
+    });
+
+    // Check if we have Google auth success parameters
+    function checkGoogleAuthSuccess() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const googleAuthSuccess = urlParams.get('googleAuthSuccess');
+      const googleUserName = urlParams.get('googleUserName');
+      const googleUserEmail = urlParams.get('googleUserEmail');
+      
+      if (googleAuthSuccess === 'true') {
+        // Show success message
+        showAlert('Successfully connected with Google!', 'success');
+        
+        // Switch to Google Docs tab
+        document.getElementById('google-docs-tab').click();
+        
+        // Update the Google connect button
+        updateGoogleConnectButton(true, googleUserName);
+        
+        // Remove the Google auth success parameters from the URL to prevent showing the message again on refresh
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('googleAuthSuccess');
+        newUrl.searchParams.delete('googleUserName');
+        newUrl.searchParams.delete('googleUserEmail');
+        window.history.replaceState({}, document.title, newUrl.toString());
+      }
+    }
+    
+    // Render players table
+    function renderPlayersTable(participants) {
+      const container = document.getElementById('players-table-container');
+      
+      console.log('Rendering players table with participants:', participants);
+      
+      if (!participants || participants.length === 0) {
+        console.log('No participants to display');
+        container.innerHTML = '<div class="alert alert-info">No players registered yet.</div>';
+        return;
+      }
+      
+      // Filter out participants without player data
+      const validParticipants = participants.filter(p => p && p.player);
+      console.log(`Filtered ${participants.length} participants to ${validParticipants.length} valid participants`);
+      
+      if (validParticipants.length === 0) {
+        console.log('No valid participants to display after filtering');
+        container.innerHTML = '<div class="alert alert-info">No players with valid data registered yet.</div>';
+        return;
+      }
+      
+      let html = `
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Rating</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      validParticipants.forEach((participant, index) => {
+        const player = participant.player;
+        if (!player) return; // This should never happen due to the filter above
+        
+        console.log(`Rendering player ${index + 1}:`, player);
+        
+        const status = participant.confirmed ? 
+          '<span class="badge bg-success">Confirmed</span>' : 
+          '<span class="badge bg-warning text-dark">Pending</span>';
+        
+        const paidStatus = participant.paid ? 
+          '<span class="badge bg-info ms-1">Paid</span>' : '';
+        
+        // Store both participant ID and player ID for removal
+        const participantId = participant._id;
+        const playerId = player._id;
+        
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${player.firstName || ''} ${player.lastName || ''}</td>
+            <td>${player.email || 'N/A'}</td>
+            <td>${player.chessRating || 'N/A'}</td>
+            <td>${status} ${paidStatus}</td>
+            <td>
+              <button class="btn btn-sm btn-danger remove-player-btn" 
+                data-participant-id="${participantId}" 
+                data-player-id="${playerId}">
+                <i class="bi bi-trash"></i> Remove
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+      console.log('Player table HTML rendered');
+      
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.remove-player-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const participantId = this.getAttribute('data-participant-id');
+          const playerId = this.getAttribute('data-player-id');
+          removePlayer(participantId, playerId);
+        });
+      });
+      console.log('Added event listeners to remove buttons');
+    }
+    
+    // Remove player from tournament
+    async function removePlayer(participantId, playerId) {
+      if (!confirm('Are you sure you want to remove this player from the tournament?')) {
+        return;
+      }
+      
+      try {
+        // Show a removing message
+        showAlert('<i class="bi bi-hourglass-split spin"></i> Removing player...', 'info');
+        
+        console.log(`Removing participant with ID: ${participantId} and player ID: ${playerId} from tournament: ${tournamentId}`);
+        
+        // First, try to get the most up-to-date tournament data to ensure we have the correct IDs
+        let updatedPlayerId = playerId;
+        let updatedParticipantId = participantId;
+        let playerName = null;
+        
+        try {
+          const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (tournamentResponse.ok) {
+            const tournamentData = await tournamentResponse.json();
+            const participants = tournamentData.data.tournament.participants || [];
+            
+            // Try to find the participant by ID
+            const participant = participants.find(p => p._id === participantId);
+            if (participant && participant.player) {
+              updatedPlayerId = participant.player._id;
+              playerName = `${participant.player.firstName || ''} ${participant.player.lastName || ''}`.trim();
+              console.log(`Found updated player ID: ${updatedPlayerId}, name: ${playerName}`);
+            }
+            
+            // If we couldn't find by participant ID, try to match by player ID
+            if (!participant) {
+              const participantByPlayerId = participants.find(p => p.player && p.player._id === playerId);
+              if (participantByPlayerId) {
+                updatedParticipantId = participantByPlayerId._id;
+                updatedPlayerId = participantByPlayerId.player._id;
+                playerName = `${participantByPlayerId.player.firstName || ''} ${participantByPlayerId.player.lastName || ''}`.trim();
+                console.log(`Found participant by player ID: ${updatedParticipantId}, ${updatedPlayerId}, name: ${playerName}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error getting updated IDs:', error);
+        }
+        
+        // Try different endpoint formats
+        const endpoints = [
+          // Try the standard endpoint with the updated player ID
+          {
+            url: `/api/tournaments/${tournamentId}/players/${updatedPlayerId}`,
+            method: 'DELETE',
+            body: null
+          },
+          // Try with the original player ID
+          {
+            url: `/api/tournaments/${tournamentId}/players/${playerId}`,
+            method: 'DELETE',
+            body: null
+          },
+          // Try a POST to remove endpoint with participant ID
+          {
+            url: `/api/tournaments/${tournamentId}/players/remove`,
+            method: 'POST',
+            body: { participantId: updatedParticipantId }
+          },
+          // Try a POST to remove endpoint with player ID
+          {
+            url: `/api/tournaments/${tournamentId}/players/remove`,
+            method: 'POST',
+            body: { playerId: updatedPlayerId }
+          }
+        ];
+        
+        let success = false;
+        let lastError = null;
+        
+        // Try each endpoint until one succeeds
+        for (const endpoint of endpoints) {
+          try {
+            console.log(`Trying endpoint: ${endpoint.method} ${endpoint.url}`);
+            
+            const requestOptions = {
+              method: endpoint.method,
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            };
+            
+            if (endpoint.body) {
+              requestOptions.body = JSON.stringify(endpoint.body);
+            }
+            
+            const response = await fetch(endpoint.url, requestOptions);
+            console.log(`Response status: ${response.status}`);
+            
+            const responseText = await response.text();
+            console.log(`Response text: ${responseText}`);
+            
+            let data;
+            try {
+              if (responseText) {
+                data = JSON.parse(responseText);
+              }
+            } catch (e) {
+              console.error('Error parsing response:', e);
+            }
+            
+            if (response.ok) {
+              success = true;
+              showAlert('Player removed successfully', 'success');
+              fetchTournamentDetails();
+              break;
+            } else {
+              lastError = data && data.error 
+                ? data.error 
+                : `Failed with status: ${response.status}`;
+              console.error(`Endpoint failed: ${lastError}`);
+            }
+          } catch (endpointError) {
+            console.error(`Error with endpoint ${endpoint.url}:`, endpointError);
+            lastError = endpointError.message;
+          }
+        }
+        
+        // If all standard methods failed, try a fallback approach by removing by name
+        if (!success && playerName) {
+          try {
+            console.log(`Trying fallback method: removing player by name: ${playerName}`);
+            
+            // First, get all players
+            const playersResponse = await fetch(`/api/tournaments/${tournamentId}/players`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (playersResponse.ok) {
+              const playersData = await playersResponse.json();
+              const participants = playersData.data.participants || [];
+              
+              // Find all players with matching name
+              const matchingParticipants = participants.filter(p => {
+                if (!p.player) return false;
+                const name = `${p.player.firstName || ''} ${p.player.lastName || ''}`.trim();
+                return name === playerName;
+              });
+              
+              console.log(`Found ${matchingParticipants.length} players with name: ${playerName}`);
+              
+              // Try to remove each matching player
+              for (const matchingParticipant of matchingParticipants) {
+                if (!matchingParticipant.player) continue;
+                
+                const matchingPlayerId = matchingParticipant.player._id;
+                console.log(`Trying to remove player with ID: ${matchingPlayerId}`);
+                
+                const removeResponse = await fetch(`/api/tournaments/${tournamentId}/players/${matchingPlayerId}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                
+                if (removeResponse.ok) {
+                  success = true;
+                  showAlert('Player removed successfully', 'success');
+                  fetchTournamentDetails();
+                  break;
+                }
+              }
+            }
+          } catch (fallbackError) {
+            console.error('Error in fallback removal method:', fallbackError);
+          }
+        }
+        
+        // Final fallback: Try to update the tournament directly by removing the participant
+        if (!success) {
+          try {
+            console.log('Trying final fallback: updating tournament directly');
+            
+            // Get current tournament data
+            const tournamentResponse = await fetch(`/api/tournaments/${tournamentId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (tournamentResponse.ok) {
+              const tournamentData = await tournamentResponse.json();
+              const tournament = tournamentData.data.tournament;
+              
+              if (tournament && tournament.participants) {
+                // Filter out the participant we want to remove
+                const updatedParticipants = tournament.participants.filter(p => 
+                  p._id !== participantId && 
+                  (!p.player || p.player._id !== playerId)
+                );
+                
+                console.log(`Filtered participants: ${tournament.participants.length} -> ${updatedParticipants.length}`);
+                
+                if (updatedParticipants.length < tournament.participants.length) {
+                  // Update the tournament with the filtered participants
+                  const updateResponse = await fetch(`/api/tournaments/${tournamentId}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      participants: updatedParticipants.map(p => ({
+                        player: p.player ? p.player._id : null,
+                        confirmed: p.confirmed,
+                        paid: p.paid
+                      }))
+                    })
+                  });
+                  
+                  if (updateResponse.ok) {
+                    success = true;
+                    showAlert('Player removed successfully', 'success');
+                    fetchTournamentDetails();
+                  } else {
+                    console.error('Failed to update tournament:', await updateResponse.text());
+                  }
+                }
+              }
+            }
+          } catch (finalFallbackError) {
+            console.error('Error in final fallback method:', finalFallbackError);
+          }
+        }
+        
+        if (!success) {
+          throw new Error(lastError || 'Failed to remove player after trying all methods');
+        }
+      } catch (error) {
+        console.error('Error removing player:', error);
+        showAlert(`Error removing player: ${error.message}`, 'danger');
+      }
+    }
+    
+    // Add player manually
+    async function addPlayer(playerData) {
+      try {
+        console.log('Adding player:', playerData);
+        console.log('Tournament ID:', tournamentId);
+        
+        const requestBody = {
+          players: [playerData]
+        };
+        console.log('Request body:', JSON.stringify(requestBody));
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}/players`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Get response text for debugging
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        
+        // Try to parse as JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Error parsing response as JSON:', e);
+          throw new Error('Invalid response from server');
+        }
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to add player');
+        }
+        
+        showAlert('Player added successfully', 'success');
+        fetchTournamentDetails();
+        
+        // Reset form
+        document.getElementById('manual-player-form').reset();
+      } catch (error) {
+        console.error('Error adding player:', error);
+        showAlert('Error adding player: ' + error.message, 'danger');
+      }
+    }
+    
+    // Upload players from file
+    async function uploadPlayersFile(formData) {
+      try {
+        console.log('Uploading players file to tournament:', tournamentId);
+        console.log('Token exists:', !!token);
+        
+        // Check if token exists
+        if (!token) {
+          showAlert('You must be logged in to upload players', 'danger');
+          return;
+        }
+        
+        // Show loading state
+        showAlert('<i class="bi bi-arrow-repeat spin"></i> Uploading players...', 'info');
+        
+        const response = await fetch(`/api/tournaments/${tournamentId}/players/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        
+        // Get the response data
+        const data = await response.json();
+        
+        if (!response.ok) {
+          console.error('Upload failed with status:', response.status);
+          console.error('Error details:', data);
+          throw new Error(data.error || 'Failed to upload players');
+        }
+        
+        showAlert(`Successfully added ${data.count} players from file`, 'success');
+        fetchTournamentDetails();
+        
+        // Reset form
+        document.getElementById('file-upload-form').reset();
+      } catch (error) {
+        console.error('Error uploading players:', error);
+        showAlert('Error uploading players: ' + error.message, 'danger');
+      }
+    }
+    
+    // Create Google Form for tournament
+    async function createGoogleForm() {
+      try {
+        const createButton = document.getElementById('create-google-form-btn');
+        createButton.disabled = true;
+        createButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+        
+        console.log('Creating Google Form for tournament:', tournamentId);
+        
+        const response = await fetch(`/api/google/tournaments/${tournamentId}/create-form`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Log the response status
+        console.log('Response status:', response.status);
+        
+        // Parse the response body
+        const responseText = await response.text();
+        console.log('Response body:', responseText);
+        
+        // Try to parse as JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Error parsing response as JSON:', e);
+        }
+        
+        if (!response.ok) {
+          const errorMessage = data && data.error ? data.error : 'Failed to create Google Form';
+          
+          // If the error is about authentication, show the authenticate button
+          if (errorMessage.includes('authenticate with Google')) {
+            document.getElementById('authenticate-google-btn').classList.add('btn-danger');
+            document.getElementById('authenticate-google-btn').classList.add('animate__animated', 'animate__pulse');
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
+        showAlert('Google Form created successfully', 'success');
+        
+        // Refresh tournament details to show the new Google Form
+        fetchTournamentDetails();
+      } catch (error) {
+        console.error('Error creating Google Form:', error);
+        showAlert('Error creating Google Form: ' + error.message, 'danger');
+      } finally {
+        // Reset button
+        const createButton = document.getElementById('create-google-form-btn');
+        createButton.disabled = false;
+        createButton.innerHTML = '<i class="bi bi-file-earmark-text"></i> Create Google Form';
+      }
+    }
+    
+    // Check if user is already authenticated with Google
+    async function checkGoogleAuthStatus() {
+      try {
+        // Try to get user info from Google
+        const response = await fetch('/api/google/user-info', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+        
+          if (data.success && data.data && data.data.userInfo) {
+            const userInfo = data.data.userInfo;
+            
+            // Update the Google connect button
+            updateGoogleConnectButton(true, userInfo.name);
+            
+            // Enable the create Google buttons
+            const createFormButton = document.getElementById('create-google-form-btn');
+            if (createFormButton) {
+              createFormButton.disabled = false;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Google auth status:', error);
+      }
+    }
+    
+    // Update the Google connect button
+    function updateGoogleConnectButton(isConnected, userName) {
+      const authButton = document.getElementById('authenticate-google-btn');
+      if (!authButton) return;
+      
+      if (isConnected) {
+        // Update button to show connected state
+        authButton.innerHTML = `<i class="bi bi-google"></i> Connected${userName ? ` as ${userName}` : ''}`;
+        authButton.classList.remove('btn-primary');
+        authButton.classList.add('btn-success');
+        authButton.disabled = true;
+        
+        // Add success note if it doesn't exist
+        if (!document.querySelector('.form-text.text-success')) {
+          const authNote = document.createElement('p');
+          authNote.className = 'form-text text-success';
+          authNote.innerHTML = `<i class="bi bi-check-circle"></i> Successfully connected with Google`;
+          authButton.parentNode.appendChild(authNote);
+        }
+        
+        // Enable the create Google buttons
+        const createFormButton = document.getElementById('create-google-form-btn');
+        if (createFormButton) {
+          createFormButton.disabled = false;
+        }
+      } else {
+        // Reset to default state
+        authButton.innerHTML = `<i class="bi bi-google"></i> Connect with Google`;
+        authButton.classList.remove('btn-success');
+        authButton.classList.add('btn-primary');
+        authButton.disabled = false;
+        
+        // Remove any success notes
+        const successNote = document.querySelector('.form-text.text-success');
+        if (successNote) {
+          successNote.remove();
+        }
+        
+        // Disable the create Google buttons
+        const createFormButton = document.getElementById('create-google-form-btn');
+        if (createFormButton) {
+          createFormButton.disabled = true;
+        }
+      }
+    }
+    
+    // Authenticate with Google
+    async function authenticateWithGoogle() {
+      try {
+        const authButton = document.getElementById('authenticate-google-btn');
+        authButton.disabled = true;
+        authButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connecting...';
+        
+        console.log('Getting Google auth URL');
+        
+        // Get the current URL to use as return URL
+        const returnUrl = window.location.href;
+        
+        // Get the auth URL
+        const response = await fetch('/api/google/auth-url', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get Google auth URL');
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success || !data.data || !data.data.authUrl) {
+          throw new Error('Invalid response from server');
+        }
+        
+        // Add state parameter with return URL
+        let authUrl = data.data.authUrl;
+        const stateParam = encodeURIComponent(JSON.stringify({ returnUrl }));
+        
+        // Check if the URL already has a state parameter
+        if (authUrl.includes('state=')) {
+          // Replace existing state parameter
+          authUrl = authUrl.replace(/state=[^&]*/, `state=${stateParam}`);
+        } else {
+          // Add state parameter
+          authUrl += authUrl.includes('?') ? '&' : '?';
+          authUrl += `state=${stateParam}`;
+        }
+        
+        // Redirect to Google auth page
+        console.log('Redirecting to Google auth URL:', authUrl);
+        window.location.href = authUrl;
+      } catch (error) {
+        console.error('Error authenticating with Google:', error);
+        showAlert('Error connecting to Google: ' + error.message, 'danger');
+        
+        // Reset button
+        const authButton = document.getElementById('authenticate-google-btn');
+        authButton.disabled = false;
+        authButton.innerHTML = '<i class="bi bi-google"></i> Connect with Google';
+      }
+    }
+  </script>
+</body>
+</html> 

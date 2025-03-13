@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* Page-specific styles */
+    .hero {
+      background: linear-gradient(135deg, #1a237e, #3949ab);
+      padding: 100px 0;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.2;
+      z-index: 0;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .cta-buttons .btn {
+      padding: 12px 30px;
+      font-weight: 600;
+      margin: 0 10px;
+      border-radius: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .cta-buttons .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .feature-card {
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      height: 100%;
+      border: none;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #3949ab;
+    }
+    
+    .testimonial {
+      background-color: #f8f9fa;
+      padding: 80px 0;
+    }
+    
+    .testimonial-card {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .testimonial-quote {
+      font-size: 1.1rem;
+      font-style: italic;
+      color: #555;
+    }
+    
+    .testimonial-author {
+      font-weight: 600;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="content-wrapper">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/tournaments">Tournaments</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/tournament-guide">Guide</a>
+            </li>
+            <li class="nav-item" id="auth-nav-item">
+              <a class="nav-link" href="/login">Login</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container hero-content text-center">
+        <h1 class="display-3 fw-bold mb-4">Chess Tournament Manager</h1>
+        <p class="lead mb-5">The ultimate platform for organizing and managing chess tournaments with ease. <br>From pairing players to tracking results, we've got you covered.</p>
+        <div class="cta-buttons">
+          <a href="/login" class="btn btn-light btn-lg">Login</a>
+          <a href="/tournaments" class="btn btn-outline-light btn-lg">Browse Tournaments</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">Why Choose Our Platform?</h2>
+          <p class="text-muted">Powerful features designed for tournament organizers and players</p>
+        </div>
+        
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-diagram-3"></i>
+                </div>
+                <h4>Automated Swiss Pairings</h4>
+                <p class="text-muted">Our system automatically generates fair pairings using the Swiss system, saving you time and ensuring balanced matches.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-trophy"></i>
+                </div>
+                <h4>Real-time Standings</h4>
+                <p class="text-muted">Track tournament progress with live standings, tiebreaks, and statistics updated in real-time as results are entered.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-people"></i>
+                </div>
+                <h4>Player Management</h4>
+                <p class="text-muted">Easily register players, import from Chess.com, and manage participant information all in one place.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row g-4 mt-3">
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-lightning"></i>
+                </div>
+                
+                <p class="text-muted">Create a tournament in minutes with our intuitive setup wizard. No technical knowledge required.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-graph-up"></i>
+                </div>
+                <h4>Advanced Tiebreaks</h4>
+                <p class="text-muted">Multiple tiebreak systems including Buchholz, Sonneborn-Berger, and more for accurate final standings.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card feature-card">
+              <div class="card-body text-center p-4">
+                <div class="feature-icon">
+                  <i class="bi bi-laptop"></i>
+                </div>
+                <h4>Mobile Friendly</h4>
+                <p class="text-muted">Access your tournament from any device. Perfect for updating results on the go during events.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="bg-light py-5">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">How It Works</h2>
+          <p class="text-muted">Get started in just a few simple steps</p>
+        </div>
+        
+        <div class="row align-items-center">
+          <div class="col-md-6 order-md-2 mb-4 mb-md-0">
+            <img src="https://images.unsplash.com/photo-1560174038-da43ac74f01b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Chess tournament" class="img-fluid rounded shadow">
+          </div>
+          <div class="col-md-6 order-md-1">
+            <div class="d-flex mb-4">
+              <div class="me-4">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">1</div>
+              </div>
+              <div>
+                <h4>Create an Account</h4>
+                <p class="text-muted">Sign up for free and get access to all our tournament management features.</p>
+              </div>
+            </div>
+            
+            <div class="d-flex mb-4">
+              <div class="me-4">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">2</div>
+              </div>
+              <div>
+                <h4>Set Up Your Tournament</h4>
+                <p class="text-muted">Define tournament details, format, and rules using our intuitive setup wizard.</p>
+              </div>
+            </div>
+            
+            <div class="d-flex mb-4">
+              <div class="me-4">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">3</div>
+              </div>
+              <div>
+                <h4>Add Players</h4>
+                <p class="text-muted">Register participants manually, import from Chess.com, or upload a file with player details.</p>
+              </div>
+            </div>
+            
+            <div class="d-flex">
+              <div class="me-4">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">4</div>
+              </div>
+              <div>
+                <h4>Start and Manage</h4>
+                <p class="text-muted">Generate pairings, record results, and track standings throughout your tournament.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonial">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">What Organizers Say</h2>
+          <p class="text-muted">Trusted by chess clubs and tournament directors worldwide</p>
+        </div>
+        
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <p class="testimonial-quote mb-4">"This platform has revolutionized how we run our club tournaments. The automated Swiss pairings save us hours of work each round."</p>
+              <div class="d-flex align-items-center">
+                <div class="ms-3">
+                  <p class="testimonial-author mb-0">Bishal Dhungana</p>
+                  <small class="text-muted">Chess Club President</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <p class="testimonial-quote mb-4">"The ability to import players from Chess.com and the real-time standings updates make this the best tournament management tool I've used."</p>
+              <div class="d-flex align-items-center">
+                <div class="ms-3">
+                  <p class="testimonial-author mb-0">Sita Ram</p>
+                  <small class="text-muted">Tournament Director</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <p class="testimonial-quote mb-4">"We've been running monthly tournaments for years, and this platform has made the process so much smoother. Highly recommended!"</p>
+              <div class="d-flex align-items-center">
+                <div class="ms-3">
+                  <p class="testimonial-author mb-0">Hari Krishna</p>
+                  <small class="text-muted">Chess Academy Owner</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-5 bg-primary text-white text-center">
+      <div class="container">
+        <h2 class="fw-bold mb-4">Ready to organize your chess tournament?</h2>
+        <div>
+          <a href="/login" class="btn btn-light btn-lg me-3">Get Started</a>
+          <a href="/tournament-guide" class="btn btn-outline-light btn-lg">Learn More</a>
+        </div>
+      </div>
+    </section>
+  </div> <!-- End of content-wrapper -->
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 mb-4 mb-md-0">
+          <h5 class="text-white mb-3">Chess Tournament Manager</h5>
+          <p class="mb-3">The ultimate platform for organizing and managing chess tournaments with ease.</p>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/bishal.dhungana.1044" target="_blank"><i class="bi bi-facebook"></i></a>
+            <a href="https://x.com/bishald97433289" target="_blank"><i class="bi bi-twitter"></i></a>
+            <a href="https://www.instagram.com/bishaldhungana7/" target="_blank"><i class="bi bi-instagram"></i></a>
+            <a href="https://www.linkedin.com/in/bishal-dhungana-939469202/" target="_blank"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+        
+        <div class="col-md-2 mb-4 mb-md-0">
+          <h6 class="text-white mb-3">Platform</h6>
+          <ul class="list-unstyled footer-links">
+            <li class="mb-2"><a href="/tournaments">Tournaments</a></li>
+            <li class="mb-2"><a href="/tournament-guide">Guide</a></li>
+          </ul>
+        </div>
+        
+        <div class="col-md-2 mb-4 mb-md-0">
+          <h6 class="text-white mb-3">Account</h6>
+          <ul class="list-unstyled footer-links">
+            <li class="mb-2"><a href="/login">Login</a></li>
+            <li class="mb-2"><a href="/register.html">Register</a></li>
+            <li class="mb-2"><a href="/profile">My Profile</a></li>
+          </ul>
+        </div>
+        
+        <div class="col-md-4">
+          <h6 class="text-white mb-3">Contact Us</h6>
+          <ul class="list-unstyled footer-links">
+            <li class="mb-2"><i class="bi bi-envelope me-2"></i> bishaldhungana600@gmail.com</li>
+            <li class="mb-2"><i class="bi bi-telephone me-2"></i> +977 9845981510</li>
+            <li class="mb-2"><i class="bi bi-geo-alt me-2"></i> Kathmandu, Nepal</li>
+          </ul>
+        </div>
+      </div>
+      
+      <hr class="my-4 bg-secondary">
+      
+      <div class="text-center">
+        <p class="mb-0">&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('token');
+      
+      // Create both landing page versions but only show the appropriate one
+      createLandingPages();
+      
+      // Show the appropriate landing page based on login status
+      if (token) {
+        document.getElementById('logged-in-content').style.display = 'block';
+        document.getElementById('logged-out-content').style.display = 'none';
+        
+        // Fetch tournament statistics
+        fetchTournamentStatistics(token);
+        
+        // Add event listeners to all create tournament buttons
+        document.querySelectorAll('#hero-create-tournament-btn, .create-tournament-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            console.log('Create Tournament button clicked');
+            window.location.href = '/quick-tournament-setup.html';
+          });
+        });
+        
+        // Add event listeners to tournament statistics boxes
+        const statBoxes = document.querySelectorAll('.tournament-stat-box');
+        statBoxes.forEach(box => {
+          box.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            window.location.href = `/tournaments?status=${status}`;
+          });
+          
+          // Add hover effect
+          box.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+            this.style.transform = 'translateY(-3px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            this.style.transition = 'all 0.3s ease';
+          });
+          
+          box.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.transform = '';
+            this.style.boxShadow = '';
+          });
+        });
+      } else {
+        document.getElementById('logged-in-content').style.display = 'none';
+        document.getElementById('logged-out-content').style.display = 'block';
+      }
+    });
+    
+    // Function to fetch tournament statistics
+    async function fetchTournamentStatistics(token) {
+      try {
+        const response = await fetch('/api/statistics', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch tournament statistics');
+        }
+        
+        const data = await response.json();
+        console.log('Tournament statistics data:', data);
+        
+        // Update the statistics on the page
+        document.getElementById('ongoing-count').textContent = data.ongoing || 0;
+        document.getElementById('not-started-count').textContent = data.notStarted || 0;
+        document.getElementById('finished-count').textContent = data.finished || 0;
+        
+        // Add visual indicator if there are tournaments in each category
+        const statBoxes = document.querySelectorAll('.tournament-stat-box');
+        statBoxes.forEach(box => {
+          const status = box.getAttribute('data-status');
+          const count = status === 'ongoing' ? data.ongoing : 
+                        status === 'registration' ? data.notStarted : 
+                        status === 'completed' ? data.finished : 0;
+          
+          if (count > 0) {
+            box.style.borderColor = '#28a745';
+            box.querySelector('h4').style.color = '#28a745';
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching tournament statistics:', error);
+        // Set default values in case of error
+        document.getElementById('ongoing-count').textContent = '0';
+        document.getElementById('not-started-count').textContent = '0';
+        document.getElementById('finished-count').textContent = '0';
+      }
+    }
+    
+    function createLandingPages() {
+      // Get the main content container
+      const contentWrapper = document.querySelector('.content-wrapper');
+      
+      // Create container for logged-out users (current content)
+      const loggedOutContent = document.createElement('div');
+      loggedOutContent.id = 'logged-out-content';
+      
+      // Move all sections after the nav into the logged-out content
+      const sections = document.querySelectorAll('section');
+      sections.forEach(section => {
+        loggedOutContent.appendChild(section.cloneNode(true));
+      });
+      
+      // Create container for logged-in users (original landing page)
+      const loggedInContent = document.createElement('div');
+      loggedInContent.id = 'logged-in-content';
+      loggedInContent.style.display = 'none';
+      loggedInContent.innerHTML = `
+        <div class="hero text-center py-5">
+    <div class="container">
+      <h1 class="display-4">Chess Tournament Manager</h1>
+      <p class="lead">Streamline your chess tournaments with automated player pairing and results tracking</p>
+      <div class="mt-4">
+        <a href="/quick-tournament-setup.html" class="btn btn-primary btn-lg create-tournament-btn" id="hero-create-tournament-btn" style="cursor: pointer; font-weight: bold; text-decoration: none;">Create Tournament</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h3 class="card-title">Tournament Statistics</h3>
+            <div class="row mt-4">
+              <div class="col-md-4">
+                <div class="border rounded p-3 mb-3 tournament-stat-box" data-status="ongoing" style="cursor: pointer;">
+                  <h4 id="ongoing-count">0</h4>
+                  <p class="text-muted mb-0">Ongoing</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3 mb-3 tournament-stat-box" data-status="registration" style="cursor: pointer;">
+                  <h4 id="not-started-count">0</h4>
+                  <p class="text-muted mb-0">Not Started</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3 mb-3 tournament-stat-box" data-status="completed" style="cursor: pointer;">
+                  <h4 id="finished-count">0</h4>
+                  <p class="text-muted mb-0">Finished</p>
+                </div>
+              </div>
+            </div>
+            <a href="/tournaments" class="btn btn-primary mt-3">View All</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+      `;
+      
+      // Create a container for both versions
+      const container = document.createElement('div');
+      container.appendChild(loggedOutContent);
+      container.appendChild(loggedInContent);
+      
+      // Clear existing content in the content-wrapper except the nav
+      const nav = contentWrapper.querySelector('nav');
+      contentWrapper.innerHTML = '';
+      contentWrapper.appendChild(nav);
+      
+      // Insert the container after the nav
+      contentWrapper.appendChild(container);
+      
+      // Initialize buttons after the DOM is updated
+      setTimeout(initializeButtons, 0);
+    }
+    
+    // Function to initialize all buttons
+    function initializeButtons() {
+      console.log('Initializing buttons');
+      
+      // Add direct click handlers to all create tournament buttons
+      const createButtons = document.querySelectorAll('#hero-create-tournament-btn, .create-tournament-btn');
+      console.log('Found create buttons:', createButtons.length);
+      
+      createButtons.forEach(btn => {
+        // Make sure the element is visible in the console
+        console.log('Button element:', btn);
+        
+        // Add a click event listener
+        btn.addEventListener('click', function(e) {
+          console.log('Create Tournament button clicked directly');
+          window.location.href = '/quick-tournament-setup.html';
+          return false;
+        });
+        
+        // Also set the onclick attribute directly
+        btn.setAttribute('onclick', "window.location.href='/quick-tournament-setup.html'; return false;");
+        
+        // Make sure the cursor is a pointer
+        btn.style.cursor = 'pointer';
+      });
+    }
+  </script>
+</body>
+</html>

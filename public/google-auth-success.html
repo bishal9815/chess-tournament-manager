@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Authentication Success - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .success-icon {
+      font-size: 5rem;
+      color: #28a745;
+    }
+    .auth-success-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="auth-success-container">
+      <div class="success-icon mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+          <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        </svg>
+      </div>
+      <h1 class="mb-4">Google Authentication Successful!</h1>
+      <p class="lead mb-4">Your Google account has been successfully connected to Chess Tournament Manager.</p>
+      <p class="mb-4">You can now create Google Sheets for tournament registrations and sync player data automatically.</p>
+      
+      <div class="d-grid gap-2 d-md-block">
+        <a href="/tournaments" class="btn btn-primary me-md-2">Go to Tournaments</a>
+        <button id="store-tokens-btn" class="btn btn-success">Complete Setup</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    // Function to get cookie value by name
+    function getCookie(name) {
+      try {
+        // More robust cookie parsing
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          // Check if this cookie starts with the name we're looking for
+          if (cookie.indexOf(name + '=') === 0) {
+            return cookie.substring(name.length + 1);
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error('Error getting cookie:', error);
+        return null;
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Debug: Log all cookies
+      console.log('All cookies:', document.cookie);
+      
+      // Check if user is logged in
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (!token || !user) {
+        // Redirect to login page if not logged in
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      
+      // Update auth nav item
+      const authNavItem = document.getElementById('auth-nav-item');
+      if (authNavItem) {
+        authNavItem.innerHTML = `
+          <a class="nav-link" href="#" id="logout-link">Logout (${user.username})</a>
+        `;
+        
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          });
+        }
+      }
+      
+      // Check for return URL in query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get('returnUrl');
+      const userName = urlParams.get('userName');
+      const userEmail = urlParams.get('userEmail');
+      
+      // Get Google tokens from cookie
+      const googleTokensCookie = getCookie('googleTokens');
+      if (googleTokensCookie) {
+        try {
+          // Decode the URL-encoded cookie value
+          const decodedTokens = decodeURIComponent(googleTokensCookie);
+          console.log('Decoded tokens:', decodedTokens);
+          
+          // Store tokens in session storage
+          sessionStorage.setItem('googleTokens', decodedTokens);
+          console.log('Google tokens stored in session storage');
+        } catch (error) {
+          console.error('Error storing Google tokens in session storage:', error);
+        }
+      }
+      
+      // Store tokens button
+      const storeTokensBtn = document.getElementById('store-tokens-btn');
+      if (storeTokensBtn) {
+        storeTokensBtn.addEventListener('click', async function() {
+          try {
+            // Get tokens from session storage
+            let googleTokens = sessionStorage.getItem('googleTokens');
+            
+            // If no tokens in session storage, try to get them from the server
+            if (!googleTokens) {
+              console.log('No tokens in session storage, trying to get them from the server...');
+              
+              // Try to get tokens from the server
+              try {
+                const tokenResponse = await fetch('/api/google/session-tokens', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (tokenResponse.ok) {
+                  const tokenData = await tokenResponse.json();
+                  if (tokenData.success && tokenData.data && tokenData.data.tokens) {
+                    googleTokens = JSON.stringify(tokenData.data.tokens);
+                    console.log('Got tokens from server:', googleTokens);
+                    sessionStorage.setItem('googleTokens', googleTokens);
+                  }
+                }
+              } catch (tokenError) {
+                console.error('Error getting tokens from server:', tokenError);
+              }
+            }
+            
+            // If still no tokens, show error
+            if (!googleTokens) {
+              throw new Error('No Google tokens found. Please try authenticating again.');
+            }
+            
+            // Parse the tokens - wrap in try/catch to handle potential parsing errors
+            let parsedTokens;
+            try {
+              parsedTokens = JSON.parse(googleTokens);
+            } catch (parseError) {
+              console.error('Error parsing tokens:', parseError);
+              throw new Error('Invalid token format: ' + parseError.message);
+            }
+            
+            // Store tokens in database
+            const response = await fetch('/api/google/store-tokens', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                tokens: parsedTokens
+              })
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              
+              // Try the direct session token storage as a fallback
+              console.log('Regular token storage failed, trying direct session token storage...');
+              const sessionResponse = await fetch('/api/google/store-session-tokens', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (!sessionResponse.ok) {
+                const sessionErrorData = await sessionResponse.json();
+                throw new Error(sessionErrorData.error || errorData.error || 'Failed to store tokens');
+              } else {
+                console.log('Successfully stored tokens using direct session approach');
+              }
+            }
+            
+            // If we have a return URL, redirect back to it with user info
+            if (returnUrl) {
+              // Create a URL object to handle parameters properly
+              const redirectUrl = new URL(returnUrl);
+              
+              // Add user info as query parameters if available
+              if (userName) {
+                redirectUrl.searchParams.set('googleUserName', userName);
+              }
+              if (userEmail) {
+                redirectUrl.searchParams.set('googleUserEmail', userEmail);
+              }
+              
+              // Add a success parameter
+              redirectUrl.searchParams.set('googleAuthSuccess', 'true');
+              
+              // Redirect back to the original page
+              window.location.href = redirectUrl.toString();
+            } else {
+              // Default redirect to tournaments page
+              window.location.href = '/tournaments';
+            }
+          } catch (error) {
+            console.error('Error storing tokens:', error);
+            alert('Failed to complete Google authentication setup: ' + error.message);
+          }
+        });
+      }
+      
+      // Update the page to show the return destination
+      if (returnUrl) {
+        const returnUrlDisplay = document.createElement('p');
+        returnUrlDisplay.className = 'text-muted mt-2';
+        returnUrlDisplay.textContent = `You'll be redirected back to your player registration form.`;
+        
+        // Insert after the buttons
+        const buttonsContainer = document.querySelector('.d-grid');
+        buttonsContainer.parentNode.insertBefore(returnUrlDisplay, buttonsContainer.nextSibling);
+        
+        // Change the Complete Setup button text
+        if (storeTokensBtn) {
+          storeTokensBtn.textContent = 'Complete & Return to Form';
+        }
+      }
+    });
+  </script>
+</body>
+</html> 

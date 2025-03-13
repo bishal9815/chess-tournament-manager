@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow">
+          <div class="card-body p-5">
+            <h2 class="text-center mb-4">Create an Account</h2>
+            <div id="register-error" class="alert alert-danger d-none"></div>
+            <div id="register-success" class="alert alert-success d-none"></div>
+            <form id="register-form">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="firstName" class="form-label">First Name</label>
+                  <input type="text" class="form-control" id="firstName" name="firstName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="lastName" class="form-label">Last Name</label>
+                  <input type="text" class="form-control" id="lastName" name="lastName" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                <div class="form-text">Password must be at least 6 characters long.</div>
+              </div>
+              <div class="mb-3">
+                <label for="chessRating" class="form-label">Chess Rating (optional)</label>
+                <input type="number" class="form-control" id="chessRating" name="chessRating">
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Register</button>
+              </div>
+              <div class="text-center mt-3">
+                <p>Already have an account? <a href="/login">Login</a></p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const chessRating = document.getElementById('chessRating').value;
+      const errorDiv = document.getElementById('register-error');
+      const successDiv = document.getElementById('register-success');
+      
+      // Reset alert messages
+      errorDiv.classList.add('d-none');
+      successDiv.classList.add('d-none');
+      
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            firstName, 
+            lastName, 
+            username, 
+            email, 
+            password,
+            chessRating: chessRating ? parseInt(chessRating) : undefined
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Show success message
+          let successMessage = data.message || 'Registration successful! Please check your email for verification code.';
+          
+          // If in development mode and using Ethereal, show the preview URL
+          if (data.previewUrl) {
+            successMessage += `<div class="mt-2">
+              <p>Since this is a development environment, you can view the email here:</p>
+              <a href="${data.previewUrl}" target="_blank" class="btn btn-sm btn-info">View Test Email</a>
+            </div>`;
+          }
+          
+          // If OTP is included in the response (development only), show it
+          if (data.otp) {
+            successMessage += `<div class="mt-2">
+              <p>Development OTP: <strong>${data.otp}</strong></p>
+            </div>`;
+          }
+          
+          // If there was an email error but we're in development mode
+          if (data.emailError) {
+            successMessage += `<div class="mt-2 alert alert-warning">
+              <p><strong>Note:</strong> Email sending failed (${data.emailError}), but you can still proceed with the OTP above for testing.</p>
+            </div>`;
+          }
+          
+          successDiv.innerHTML = successMessage;
+          successDiv.classList.remove('d-none');
+          
+          // Redirect to OTP verification page after a delay
+          setTimeout(() => {
+            let verifyUrl = `/verify-otp.html?email=${encodeURIComponent(email)}`;
+            
+            // If in development mode and OTP is provided, include it in the URL
+            if (data.otp) {
+              verifyUrl += `&otp=${data.otp}`;
+            }
+            
+            window.location.href = verifyUrl;
+          }, 3000);
+        } else {
+          errorDiv.textContent = Array.isArray(data.error) ? data.error.join(', ') : data.error;
+          errorDiv.classList.remove('d-none');
+        }
+      } catch (error) {
+        errorDiv.textContent = 'An error occurred. Please try again later.';
+        errorDiv.classList.remove('d-none');
+      }
+    });
+  </script>
+</body>
+</html> 
