@@ -37,6 +37,6 @@ async function autoCommitAndPush(commitMessage, branchName = 'main') {
 
 // Example usage
 const commitMessage = 'Automated commit via Node.js script';
-const branchName = 'main'; // Change this to your branch name if needed
+const branchName = 'master'; // Change this to your branch name if needed
 
 autoCommitAndPush(commitMessage, branchName);
