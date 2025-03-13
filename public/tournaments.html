@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournaments - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 id="tournaments-heading">Tournaments</h1>
+      <div id="auth-buttons">
+        <div class="dropdown d-inline-block me-2" id="create-tournament-dropdown" style="display: none;">
+        <!--  <button class="btn btn-primary dropdown-toggle" type="button" id="createTournamentDropdown" data-bs-toggle="dropdown" aria-expanded="false">-->
+            
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="createTournamentDropdown">
+            <li><a class="dropdown-item" href="/quick-tournament-setup.html?visibility=public">Public Tournament</a></li>
+            <li><a class="dropdown-item" href="/quick-tournament-setup.html?visibility=private">Private Tournament</a></li>
+          </ul>
+        </div>
+        <button id="toggle-view-btn" class="btn btn-outline-primary me-2" style="display: none;">View My Tournaments</button>
+        <a href="/login.html" id="login-btn" class="btn btn-primary me-2">Login</a>
+        <a href="/register.html" id="register-btn" class="btn btn-outline-primary">Register</a>
+      </div>
+    </div>
+
+    <div id="tournaments-description" class="alert alert-info mb-4">
+      <!-- Description will be set dynamically based on login status -->
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="form-group">
+          <label for="status-filter">Status</label>
+          <select id="status-filter" class="form-select">
+            <option value="all">All</option>
+            <option value="registration">Registration Open</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="form-group">
+          <label for="search">Search</label>
+          <input type="text" id="search" class="form-control" placeholder="Search tournaments...">
+        </div>
+      </div>
+    </div>
+
+    <div id="tournaments-container">
+      <div class="text-center py-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading tournaments...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2023 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isOwner = user && user.role === 'owner';
+    
+    // Track if we're viewing all tournaments
+    let viewingAllTournaments = true;
+    
+    // Fetch tournaments from API
+    async function fetchTournaments() {
+      try {
+        const requestOptions = {
+          method: 'GET',
+          headers: {}
+        };
+        
+        // Include the token in the request if the user is logged in
+        if (token) {
+          requestOptions.headers['Authorization'] = `Bearer ${token}`;
+          
+          // Add a header to indicate if we want all tournaments or just the user's
+          if (!viewingAllTournaments) {
+            // When a user wants to see only their tournaments, add a special parameter
+            requestOptions.headers['X-Show-Only-Mine'] = 'true';
+          }
+        }
+        
+        const response = await fetch('/api/tournaments', requestOptions);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tournaments: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Tournaments data received:', data);
+        return data.data;
+      } catch (error) {
+        console.error('Error fetching tournaments:', error);
+        document.getElementById('tournaments-container').innerHTML = `
+          <div class="alert alert-danger">
+            <h4>Error Loading Tournaments</h4>
+            <p>${error.message}</p>
+            <p>Please try refreshing the page or contact support if the problem persists.</p>
+          </div>
+        `;
+        return [];
+      }
+    }
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Update UI based on authentication status
+      if (token) {
+        // User is logged in
+        document.getElementById('create-tournament-dropdown').style.display = 'inline-block';
+        document.getElementById('login-btn').style.display = 'none';
+        document.getElementById('register-btn').style.display = 'none';
+        
+        // Only show toggle button for owner users
+        const toggleBtn = document.getElementById('toggle-view-btn');
+        if (isOwner) {
+          toggleBtn.style.display = 'inline-block';
+          toggleBtn.textContent = 'View My Tournaments';
+          document.getElementById('tournaments-heading').textContent = 'All Tournaments';
+          document.getElementById('tournaments-description').textContent = 
+            'Showing all tournaments. As an owner, you can manage all tournaments in the system.';
+        } else {
+          // Regular user - show toggle button for viewing all vs. their tournaments
+          toggleBtn.style.display = 'inline-block';
+          toggleBtn.textContent = 'View My Tournaments';
+          document.getElementById('tournaments-heading').textContent = 'All Tournaments';
+          document.getElementById('tournaments-description').textContent = 
+            'Showing all tournaments. You can create and manage your own tournaments.';
+          viewingAllTournaments = true; // Start with viewing all tournaments
+        }
+      } else {
+        // User is not logged in
+        document.getElementById('create-tournament-dropdown').style.display = 'none';
+        // Login and register buttons are already visible by default in the HTML
+        document.getElementById('toggle-view-btn').style.display = 'none';
+        
+        document.getElementById('tournaments-heading').textContent = 'Public Tournaments';
+        document.getElementById('tournaments-description').textContent = 
+          'Showing all public tournaments. Login or register to create and manage your own tournaments.';
+      }
+      
+      // Set status filter text
+      const statusFilter = document.getElementById('status-filter').value;
+      let statusText = 'All';
+      
+      if (statusFilter === 'registration') {
+        statusText = 'Registration Open';
+      } else if (statusFilter === 'ongoing') {
+        statusText = 'Ongoing';
+      } else if (statusFilter === 'completed') {
+        statusText = 'Completed';
+      }
+      
+      // Check for status parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const statusParam = urlParams.get('status');
+      
+      if (statusParam) {
+        // Set the status filter dropdown to match the URL parameter
+        const statusFilter = document.getElementById('status-filter');
+        
+        // Map the status parameter to the correct filter value
+        if (statusParam === 'in_progress' || statusParam === 'active' || statusParam === 'ongoing') {
+          statusFilter.value = 'ongoing';
+        } else if (statusParam === 'registration') {
+          statusFilter.value = 'registration';
+        } else if (statusParam === 'completed') {
+          statusFilter.value = 'completed';
+        } else {
+          statusFilter.value = 'all';
+        }
+        
+        // Update the page heading to reflect the filtered view
+        let statusText = 'All';
+        if (statusParam === 'registration') {
+          statusText = 'Not Started';
+        } else if (statusParam === 'in_progress' || statusParam === 'active' || statusParam === 'ongoing') {
+          statusText = 'Ongoing';
+        } else if (statusParam === 'completed') {
+          statusText = 'Finished';
+        }
+        
+        document.getElementById('tournaments-heading').textContent = `${statusText} Tournaments`;
+        document.getElementById('tournaments-description').textContent = 
+          `Showing ${statusText.toLowerCase()} tournaments.`;
+      }
+      
+      // Fetch and render tournaments
+      const tournaments = await fetchTournaments();
+      renderTournaments(tournaments);
+      
+      // Add event listeners
+      setupEventListeners();
+    });
+    
+    // Set up event listeners
+    function setupEventListeners() {
+      // Toggle between viewing "My Tournaments" and "All Tournaments"
+      if (token) {
+        document.getElementById('toggle-view-btn').addEventListener('click', toggleTournamentsView);
+      }
+      
+      // Add event listeners for filters
+      document.getElementById('status-filter').addEventListener('change', async () => {
+        const tournaments = await fetchTournaments();
+        renderTournaments(tournaments);
+      });
+      
+      document.getElementById('search').addEventListener('input', async () => {
+        const tournaments = await fetchTournaments();
+        renderTournaments(tournaments);
+      });
+    }
+    
+    async function toggleTournamentsView() {
+      const toggleBtn = document.getElementById('toggle-view-btn');
+      const tournamentsHeading = document.getElementById('tournaments-heading');
+      const tournamentsDescription = document.getElementById('tournaments-description');
+      
+      viewingAllTournaments = !viewingAllTournaments;
+      
+      if (viewingAllTournaments) {
+        // Switch to viewing all tournaments
+        toggleBtn.textContent = 'View My Tournaments';
+        tournamentsHeading.textContent = 'All Tournaments';
+        if (isOwner) {
+          tournamentsDescription.textContent = 'Showing all tournaments. As an owner, you can manage all tournaments in the system.';
+        } else {
+          tournamentsDescription.textContent = 'Showing all tournaments. You can create and manage your own tournaments.';
+        }
+      } else {
+        // Switch back to viewing user's tournaments
+        toggleBtn.textContent = 'View All Tournaments';
+        tournamentsHeading.textContent = 'My Tournaments';
+        if (isOwner) {
+          tournamentsDescription.textContent = 'Showing tournaments you have created. As an owner, you can manage all tournaments.';
+        } else {
+          tournamentsDescription.textContent = 'Showing tournaments you have created. You can manage these tournaments.';
+        }
+      }
+      
+      // Fetch and render tournaments with the new filter
+      const tournaments = await fetchTournaments();
+      renderTournaments(tournaments);
+    }
+    
+    // Render tournaments
+    function renderTournaments(tournaments) {
+      const container = document.getElementById('tournaments-container');
+      const statusFilter = document.getElementById('status-filter').value;
+      const searchQuery = document.getElementById('search').value.toLowerCase();
+      
+      console.log('All tournaments:', tournaments);
+      console.log('Status filter:', statusFilter);
+      
+      // Filter tournaments
+      let filteredTournaments = tournaments;
+      
+      // For non-logged in users, only show public tournaments
+      if (!token) {
+        console.log('Filtering to show only public tournaments for non-logged in users');
+        filteredTournaments = filteredTournaments.filter(t => 
+          t.isPublic === undefined || t.isPublic === true
+        );
+        console.log('After public filtering:', filteredTournaments.length, 'tournaments');
+      }
+      
+      if (statusFilter !== 'all') {
+        console.log('Filtering by status:', statusFilter);
+        filteredTournaments = filteredTournaments.filter(t => {
+          // Handle different status values
+          console.log('Tournament status:', t.status);
+          if (statusFilter === 'ongoing') {
+            return t.status === 'ongoing' || t.status === 'active' || t.status === 'in_progress';
+          } else {
+            return t.status === statusFilter;
+          }
+        });
+      }
+      
+      console.log('After status filtering:', filteredTournaments.length, 'tournaments');
+      
+      if (searchQuery) {
+        console.log('Filtering by search query:', searchQuery);
+        filteredTournaments = filteredTournaments.filter(t => 
+          t.name.toLowerCase().includes(searchQuery) || 
+          t.location.toLowerCase().includes(searchQuery)
+        );
+        console.log('After search filtering:', filteredTournaments.length, 'tournaments');
+      }
+      
+      // Generate HTML
+      if (filteredTournaments.length === 0) {
+        console.log('No tournaments to display after filtering');
+        // Check if this is due to filtering
+        if (statusFilter !== 'all' || searchQuery) {
+          container.innerHTML = `
+            <div class="alert alert-info">
+              No tournaments found matching your filter criteria.
+            </div>
+          `;
+        } else if (token && !viewingAllTournaments) {
+          // User is logged in but hasn't created any tournaments
+          container.innerHTML = `
+            <div class="alert alert-info">
+              <h4>You haven't created any tournaments yet</h4>
+              <p>Get started by creating your first tournament!</p>
+              <a href="/quick-tournament-setup.html" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-circle"></i> Create Your First Tournament
+              </a>
+            </div>
+          `;
+        } else {
+          // No tournaments found (general case)
+          container.innerHTML = `
+            <div class="alert alert-info">
+              No tournaments found.
+            </div>
+          `;
+        }
+        return;
+      }
+      
+      console.log('Rendering', filteredTournaments.length, 'tournaments');
+      
+      let html = '<div class="row">';
+      
+      filteredTournaments.forEach(tournament => {
+        const startDate = new Date(tournament.startDate).toLocaleDateString();
+        const endDate = new Date(tournament.endDate).toLocaleDateString();
+        
+        let statusBadge = '';
+        switch (tournament.status) {
+          case 'registration':
+            statusBadge = '<span class="badge bg-success">Registration Open</span>';
+            break;
+          case 'ongoing':
+            statusBadge = '<span class="badge bg-primary">Ongoing</span>';
+            break;
+          case 'completed':
+            statusBadge = '<span class="badge bg-secondary">Completed</span>';
+            break;
+        }
+        
+        html += `
+          <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title">${tournament.name}</h5>
+                <div class="mb-2">${statusBadge}</div>
+                <p class="card-text">
+                  <strong>Location:</strong> ${tournament.location}<br>
+                  <strong>Dates:</strong> ${startDate} - ${endDate}<br>
+                  <strong>Format:</strong> ${tournament.format}<br>
+                  <strong>Participants:</strong> ${tournament.participants ? tournament.participants.length : 0}/${tournament.maxParticipants}<br>
+                  <strong>Organizer:</strong> ${tournament.createdByOwner || (tournament.organizer && tournament.organizer.role === 'owner') ? 
+                    '<span class="badge bg-primary">Owner</span>' : 
+                    (tournament.organizer ? tournament.organizer.username : 'Unknown')}
+                </p>
+              </div>
+              <div class="card-footer bg-transparent">
+                <a href="/tournament-details.html?id=${tournament._id}" class="btn btn-outline-primary w-100">View Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

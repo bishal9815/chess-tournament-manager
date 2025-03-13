@@ -1,0 +1,42 @@
+{
+  "title": "Chess - Registration Form",
+  "content": "Tournament: Chess\nLocation: Kathmandu\nStart Date: 3/22/2025\nEnd Date: 3/24/2025\nRounds: 5\nRegistration Deadline: 3/20/2025\nEntry Fee: Free\nDescription: No description provided\n\nPLAYER REGISTRATION\n\nInstructions: Please add player information below in the following format:\nFirst Name, Last Name, Email, Chess Rating, Username, Phone, City, State, Country\n\n",
+  "players": [
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@example.com",
+      "chessRating": 1500,
+      "chesscomUsername": "johndoe",
+      "phone": "555-123-4567",
+      "city": "New York",
+      "state": "NY",
+      "country": "USA",
+      "registrationDate": "2025-03-08T04:51:38.569Z"
+    },
+    {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane.smith@example.com",
+      "chessRating": 1650,
+      "chesscomUsername": "janesmith",
+      "phone": "555-987-6543",
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "USA",
+      "registrationDate": "2025-03-08T04:51:38.570Z"
+    },
+    {
+      "firstName": "Bob",
+      "lastName": "Johnson",
+      "email": "bob.johnson@example.com",
+      "chessRating": 1200,
+      "chesscomUsername": "bobjohnson",
+      "phone": "555-555-5555",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "USA",
+      "registrationDate": "2025-03-08T04:51:38.570Z"
+    }
+  ]
+}

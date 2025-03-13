@@ -1,0 +1,46 @@
+{
+  "title": "Chess - Registration Form",
+  "sheets": [
+    {
+      "title": "Player Registration",
+      "data": []
+    },
+    {
+      "title": "Tournament Info",
+      "data": [
+        [
+          "Tournament Name:",
+          "Chess"
+        ],
+        [
+          "Location:",
+          "Kathmandu"
+        ],
+        [
+          "Start Date:",
+          "3/22/2025"
+        ],
+        [
+          "End Date:",
+          "3/24/2025"
+        ],
+        [
+          "Rounds:",
+          5
+        ],
+        [
+          "Registration Deadline:",
+          "3/20/2025"
+        ],
+        [
+          "Entry Fee:",
+          "Free"
+        ],
+        [
+          "Description:",
+          "No description provided"
+        ]
+      ]
+    }
+  ]
+}

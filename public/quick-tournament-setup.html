@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Setup - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="quick-tournament-setup">
+      <h2 class="mb-4" id="setup-heading">Quick Tournament Setup</h2>
+      
+      <!-- Progress indicator -->
+      <div class="progress-indicator mb-4">
+        <div class="progress" style="height: 2px;">
+          <div 
+            class="progress-bar" 
+            role="progressbar" 
+            style="width: 20%"
+            aria-valuenow="20" 
+            aria-valuemin="0" 
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+          <div class="step active">
+            <div class="step-circle">1</div>
+            <div class="step-label">Details</div>
+          </div>
+          <div class="step">
+            <div class="step-circle">2</div>
+            <div class="step-label">Players</div>
+          </div>
+          <div class="step">
+            <div class="step-circle">3</div>
+            <div class="step-label">Preview</div>
+          </div>
+          <div class="step">
+            <div class="step-circle">4</div>
+            <div class="step-label">Confirm</div>
+          </div>
+          <div class="step">
+            <div class="step-circle">5</div>
+            <div class="step-label">Complete</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 1: Tournament Details -->
+      <div class="setup-step-container">
+        <h3>Step 1: Tournament Details</h3>
+        <form id="tournament-form">
+          <div class="mb-3">
+            <label for="name" class="form-label">Tournament Name *</label>
+            <input
+              type="text"
+              class="form-control"
+              id="name"
+              name="name"
+              required
+            />
+          </div>
+          
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea
+              class="form-control"
+              id="description"
+              name="description"
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="location" class="form-label">Location *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="location"
+                name="location"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="timeControl" class="form-label">Time Control</label>
+              <select
+                class="form-select"
+                id="timeControl"
+                name="timeControl"
+              >
+                <option value="Bullet">Bullet</option>
+                <option value="Blitz">Blitz</option>
+                <option value="Rapid">Rapid</option>
+                <option value="Standard" selected>Standard</option>
+                <option value="Classical">Classical</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="privateCheckbox">
+            <label class="form-check-label" for="privateCheckbox">Make this tournament private (only visible to you)</label>
+            <input type="hidden" id="isPublic" name="isPublic" value="true">
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="startDate" class="form-label">Start Date *</label>
+              <input
+                type="date"
+                class="form-control"
+                id="startDate"
+                name="startDate"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="endDate" class="form-label">End Date *</label>
+              <input
+                type="date"
+                class="form-control"
+                id="endDate"
+                name="endDate"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="registrationDeadline" class="form-label">Registration Deadline *</label>
+              <input
+                type="date"
+                class="form-control"
+                id="registrationDeadline"
+                name="registrationDeadline"
+                required
+              />
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="rounds" class="form-label">Number of Rounds *</label>
+              <input
+                type="number"
+                class="form-control"
+                id="rounds"
+                name="rounds"
+                value="5"
+                min="1"
+                required
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="maxParticipants" class="form-label">Max Participants</label>
+              <input
+                type="number"
+                class="form-control"
+                id="maxParticipants"
+                name="maxParticipants"
+                value="0"
+                min="0"
+                placeholder="0 for unlimited"
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="entryFee" class="form-label">Entry Fee</label>
+              <input
+                type="number"
+                class="form-control"
+                id="entryFee"
+                name="entryFee"
+                value="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="pairingSystem" class="form-label">Pairing System *</label>
+              <select
+                class="form-select"
+                id="pairingSystem"
+                name="pairingSystem"
+                required
+              >
+                <option value="swiss" selected>Swiss System</option>
+                <option value="doubleSwiss">Double Swiss System</option>
+                <option value="roundRobin">Round-Robin</option>
+                <option value="knockout">Knockout (Single Elimination)</option>
+                <option value="scheveningen">Scheveningen System</option>
+                <option value="monrad">Monrad System (Danish)</option>
+                <option value="random">Random Pairing</option>
+                <option value="accelerated">Accelerated Pairing</option>
+              </select>
+              <div class="form-text mt-1">
+                <small>
+                  <strong>Swiss System:</strong> Players meet opponents with similar scores.
+                  <br>
+                  <strong>Double Swiss:</strong> Two Swiss tournaments with combined standings.
+                  <br>
+                  <strong>Round-Robin:</strong> Each participant plays against every other participant.
+                  <br>
+                  <strong>Knockout:</strong> Players are eliminated after losing a match.
+                  <br>
+                  <strong>Scheveningen:</strong> Team-based competition where each player faces every opponent from the opposing team.
+                  <br>
+                  <strong>Monrad (Danish):</strong> Modified Swiss allowing leaders to face trailing players.
+                  <br>
+                  <strong>Random:</strong> Opponents assigned randomly without considering scores.
+                  <br>
+                  <strong>Accelerated:</strong> Modified Swiss designed to speed up top-tier matchups.
+                </small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+              Next: Add Players
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Show alert message
+    function showAlert(message, type = 'success') {
+      // Create alert container if it doesn't exist
+      let alertContainer = document.querySelector('.alert-container');
+      if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.className = 'alert-container position-fixed top-0 start-50 translate-middle-x p-3';
+        alertContainer.style.zIndex = '9999';
+        document.body.appendChild(alertContainer);
+      }
+      
+      // Create alert element
+      const alertElement = document.createElement('div');
+      alertElement.className = `alert alert-${type} alert-dismissible fade show`;
+      alertElement.role = 'alert';
+      alertElement.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      
+      // Add alert to container
+      alertContainer.appendChild(alertElement);
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        const bsAlert = new bootstrap.Alert(alertElement);
+        bsAlert.close();
+      }, 5000);
+    }
+    
+    // Simple JavaScript for the demo page
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + 14); // Two weeks from now
+      
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 2); // Two days tournament
+      
+      const registrationDeadline = new Date(startDate);
+      registrationDeadline.setDate(startDate.getDate() - 2); // Two days before start
+      
+      // Format dates for input fields
+      document.getElementById('startDate').value = formatDate(startDate);
+      document.getElementById('endDate').value = formatDate(endDate);
+      document.getElementById('registrationDeadline').value = formatDate(registrationDeadline);
+      
+      // Check for visibility parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const visibilityParam = urlParams.get('visibility');
+      
+      if (visibilityParam) {
+        // Set the visibility based on the URL parameter
+        if (visibilityParam === 'private') {
+          document.getElementById('privateCheckbox').checked = true;
+          document.getElementById('isPublic').value = 'false';
+          document.getElementById('setup-heading').textContent = 'Create Private Tournament';
+        } else {
+          document.getElementById('privateCheckbox').checked = false;
+          document.getElementById('isPublic').value = 'true';
+          document.getElementById('setup-heading').textContent = 'Create Public Tournament';
+        }
+      }
+      
+      // Update isPublic value when checkbox changes
+      document.getElementById('privateCheckbox').addEventListener('change', function() {
+        document.getElementById('isPublic').value = this.checked ? 'false' : 'true';
+      });
+      
+      // Handle form submission
+      document.getElementById('tournament-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Disable submit button
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+        
+        try {
+          // Get form data
+          const formData = new FormData(this);
+          const tournamentData = {};
+          
+          // Convert FormData to JSON
+          for (const [key, value] of formData.entries()) {
+            tournamentData[key] = value;
+          }
+          
+          // Add default values
+          tournamentData.format = 'Swiss';
+          tournamentData.status = 'registration';
+          tournamentData.currentRound = 0;
+          
+          // Ensure isPublic is included and convert to boolean
+          if (tournamentData.isPublic) {
+            tournamentData.isPublic = tournamentData.isPublic === 'true';
+          } else {
+            tournamentData.isPublic = true; // Default to public if not specified
+          }
+          
+          // Create tournament
+          const response = await fetch('/api/tournaments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(tournamentData)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create tournament');
+          }
+          
+          const data = await response.json();
+          
+          // Show success message and redirect immediately
+          showAlert('Tournament created successfully! Redirecting to player registration...', 'success');
+          
+          // Redirect to player registration page immediately
+          window.location.href = `/player-registration-google.html?tournamentId=${data.data._id}`;
+        } catch (error) {
+          console.error('Error creating tournament:', error);
+          showAlert(`Error: ${error.message}`, 'danger');
+          
+          // Re-enable submit button
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Create Tournament';
+        }
+      });
+      
+      // Helper function to format dates for input fields
+      function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    });
+  </script>
+</body>
+</html>

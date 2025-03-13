@@ -1,0 +1,10 @@
+Chess Tournament Manager - Player Import Template
+
+Instructions:
+1. Enter one player per line in the format: First Name, Last Name, Email, Rating
+2. Save the file and upload it to the system
+
+Example:
+John, Doe, john.doe@example.com, 1850
+Jane, Smith, jane.smith@example.com, 1720
+Michael, Johnson, michael.j@example.com, 2100 

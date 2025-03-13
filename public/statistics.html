@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Statistics - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/statistics.html">Statistics</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <h1 class="mb-4">Tournament Statistics</h1>
+    
+    <div id="loading-container" class="text-center py-5">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading statistics...</p>
+    </div>
+    
+    <div id="statistics-container" style="display: none;">
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">Tournament Status</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">Tournament Ownership</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="ownershipChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-12 mb-4">
+          <div class="card">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">Participants by Tournament Type</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="participantsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">Detailed Statistics</h3>
+            </div>
+            <div class="card-body">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Statistic</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody id="statistics-table">
+                  <!-- Statistics will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="error-container" class="alert alert-danger" style="display: none;">
+      <h4>Error Loading Statistics</h4>
+      <p id="error-message"></p>
+      <button class="btn btn-danger mt-2" onclick="location.reload()">Retry</button>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/auth-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        // Fetch statistics
+        const statistics = await fetchStatistics();
+        
+        // Hide loading container
+        document.getElementById('loading-container').style.display = 'none';
+        
+        // Show statistics container
+        document.getElementById('statistics-container').style.display = 'block';
+        
+        // Render charts and tables
+        renderStatusChart(statistics);
+        renderOwnershipChart(statistics);
+        renderParticipantsChart(statistics);
+        renderStatisticsTable(statistics);
+      } catch (error) {
+        console.error('Error initializing statistics page:', error);
+        
+        // Hide loading container
+        document.getElementById('loading-container').style.display = 'none';
+        
+        // Show error container
+        document.getElementById('error-container').style.display = 'block';
+        document.getElementById('error-message').textContent = error.message;
+      }
+    });
+    
+    // Fetch statistics from API
+    async function fetchStatistics() {
+      try {
+        const response = await fetch('/api/tournaments/statistics');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch statistics');
+        }
+        
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+        throw error;
+      }
+    }
+    
+    // Render status chart
+    function renderStatusChart(statistics) {
+      const ctx = document.getElementById('statusChart').getContext('2d');
+      
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Registration Open', 'Ongoing', 'Completed'],
+          datasets: [{
+            data: [
+              statistics.registrationTournaments,
+              statistics.ongoingTournaments,
+              statistics.completedTournaments
+            ],
+            backgroundColor: [
+              'rgba(40, 167, 69, 0.7)',  // Green for registration
+              'rgba(0, 123, 255, 0.7)',  // Blue for ongoing
+              'rgba(108, 117, 125, 0.7)' // Gray for completed
+            ],
+            borderColor: [
+              'rgba(40, 167, 69, 1)',
+              'rgba(0, 123, 255, 1)',
+              'rgba(108, 117, 125, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            title: {
+              display: true,
+              text: 'Tournaments by Status'
+            }
+          }
+        }
+      });
+    }
+    
+    // Render ownership chart
+    function renderOwnershipChart(statistics) {
+      const ctx = document.getElementById('ownershipChart').getContext('2d');
+      
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Owner Tournaments', 'User Tournaments'],
+          datasets: [{
+            data: [
+              statistics.ownerTournaments,
+              statistics.userTournaments
+            ],
+            backgroundColor: [
+              'rgba(0, 123, 255, 0.7)',  // Blue for owner
+              'rgba(255, 193, 7, 0.7)'   // Yellow for user
+            ],
+            borderColor: [
+              'rgba(0, 123, 255, 1)',
+              'rgba(255, 193, 7, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            title: {
+              display: true,
+              text: 'Tournaments by Ownership'
+            }
+          }
+        }
+      });
+    }
+    
+    // Render participants chart
+    function renderParticipantsChart(statistics) {
+      const ctx = document.getElementById('participantsChart').getContext('2d');
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Owner Tournaments', 'User Tournaments', 'Total'],
+          datasets: [{
+            label: 'Number of Participants',
+            data: [
+              statistics.ownerTournamentParticipants,
+              statistics.userTournamentParticipants,
+              statistics.totalParticipants
+            ],
+            backgroundColor: [
+              'rgba(0, 123, 255, 0.7)',  // Blue for owner
+              'rgba(255, 193, 7, 0.7)',  // Yellow for user
+              'rgba(40, 167, 69, 0.7)'   // Green for total
+            ],
+            borderColor: [
+              'rgba(0, 123, 255, 1)',
+              'rgba(255, 193, 7, 1)',
+              'rgba(40, 167, 69, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Participants by Tournament Type'
+            }
+          }
+        }
+      });
+    }
+    
+    // Render statistics table
+    function renderStatisticsTable(statistics) {
+      const tableBody = document.getElementById('statistics-table');
+      
+      // Clear existing rows
+      tableBody.innerHTML = '';
+      
+      // Add rows for each statistic
+      const rows = [
+        { name: 'Total Tournaments', value: statistics.totalTournaments },
+        { name: 'Registration Open Tournaments', value: statistics.registrationTournaments },
+        { name: 'Ongoing Tournaments', value: statistics.ongoingTournaments },
+        { name: 'Completed Tournaments', value: statistics.completedTournaments },
+        { name: 'Owner Tournaments', value: statistics.ownerTournaments },
+        { name: 'User Tournaments', value: statistics.userTournaments },
+        { name: 'Total Participants', value: statistics.totalParticipants },
+        { name: 'Participants in Owner Tournaments', value: statistics.ownerTournamentParticipants },
+        { name: 'Participants in User Tournaments', value: statistics.userTournamentParticipants },
+        { name: 'Average Participants per Tournament', value: (statistics.totalParticipants / statistics.totalTournaments).toFixed(2) },
+        { name: 'Average Participants per Owner Tournament', value: (statistics.ownerTournamentParticipants / statistics.ownerTournaments).toFixed(2) },
+        { name: 'Average Participants per User Tournament', value: (statistics.userTournamentParticipants / statistics.userTournaments).toFixed(2) }
+      ];
+      
+      // Add rows to table
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        
+        const nameTd = document.createElement('td');
+        nameTd.textContent = row.name;
+        
+        const valueTd = document.createElement('td');
+        valueTd.textContent = isNaN(row.value) ? 'N/A' : row.value;
+        
+        tr.appendChild(nameTd);
+        tr.appendChild(valueTd);
+        
+        tableBody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html> 

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Chess Tournament Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .social-login-btn {
+      margin-top: 10px;
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .google-btn {
+      background-color: #fff;
+      color: #757575;
+      border: 1px solid #ddd;
+    }
+    .google-btn:hover {
+      background-color: #f1f1f1;
+    }
+    .facebook-btn {
+      background-color: #3b5998;
+      color: white;
+      border: none;
+    }
+    .facebook-btn:hover {
+      background-color: #2d4373;
+    }
+    .social-login-divider {
+      text-align: center;
+      margin: 20px 0;
+      position: relative;
+    }
+    .social-login-divider:before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background-color: #e0e0e0;
+      z-index: 0;
+    }
+    .social-login-divider span {
+      background-color: white;
+      padding: 0 15px;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Chess Tournament Manager</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/tournaments">Tournaments</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/tournament-guide">Guide</a>
+          </li>
+          <li class="nav-item" id="auth-nav-item">
+            <a class="nav-link active" href="/login">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow">
+          <div class="card-body p-5">
+            <h2 class="text-center mb-4">Login</h2>
+            <div id="login-error" class="alert alert-danger d-none"></div>
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Login</button>
+              </div>
+            </form>
+            
+            <div class="social-login-divider">
+              <span>OR</span>
+            </div>
+            
+            <div class="social-login-buttons">
+              <button id="google-login" class="btn social-login-btn google-btn">
+                <i class="fab fa-google me-2"></i> Login with Google
+              </button>
+              <button id="facebook-login" class="btn social-login-btn facebook-btn">
+                <i class="fab fa-facebook-f me-2"></i> Login with Facebook
+              </button>
+            </div>
+            
+            <div class="text-center mt-3">
+              <p>Don't have an account? <a href="/register.html">Register</a></p>
+              <p class="mt-2"><a href="/" class="text-decoration-none">← Back to Home</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-white py-4 mt-auto">
+    <div class="container text-center">
+      <p>&copy; 2025 Chess Tournament Manager. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('login-error');
+      
+      errorDiv.classList.add('d-none');
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Store token in localStorage
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          console.log('Login successful. User data:', data.user);
+          console.log('User role:', data.user.role);
+          
+          // Store username for display in navbar
+          if (data.user) {
+            let displayName;
+            if (data.user.firstName && data.user.lastName) {
+              displayName = `${data.user.firstName} ${data.user.lastName}`;
+            } else if (data.user.firstName) {
+              displayName = data.user.firstName;
+            } else if (data.user.username) {
+              displayName = data.user.username;
+            } else if (data.user.email) {
+              displayName = data.user.email.split('@')[0];
+            } else {
+              displayName = 'Player';
+            }
+            localStorage.setItem('username', displayName);
+          }
+          
+          // Check if there's a redirect URL in the query parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirectUrl = urlParams.get('redirect');
+          
+          // Redirect to the specified URL or home page
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+          } else {
+            window.location.href = '/';
+          }
+        } else {
+          // Check if the error is due to unverified email
+          if (data.needsVerification) {
+            errorDiv.textContent = data.error;
+            errorDiv.classList.remove('d-none');
+            
+            // Add a button to redirect to verification page
+            errorDiv.innerHTML += `
+              <div class="mt-2">
+                <a href="/verify-otp.html?email=${encodeURIComponent(data.email)}" class="btn btn-sm btn-primary">
+                  Verify Email
+                </a>
+              </div>
+            `;
+          } else {
+            errorDiv.textContent = data.error;
+            errorDiv.classList.remove('d-none');
+          }
+        }
+      } catch (error) {
+        errorDiv.textContent = 'An error occurred. Please try again later.';
+        errorDiv.classList.remove('d-none');
+      }
+    });
+    
+    // Google Login
+    document.getElementById('google-login').addEventListener('click', () => {
+      window.location.href = '/api/auth/google-simple';
+    });
+    
+    // Facebook Login
+    document.getElementById('facebook-login').addEventListener('click', () => {
+      window.location.href = '/api/auth/facebook';
+    });
+  </script>
+</body>
+</html> 

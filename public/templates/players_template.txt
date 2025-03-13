@@ -1,0 +1,11 @@
+Name,Email,Rating,ChesscomUsername
+John Smith,john.smith@example.com,1850,JSmith123
+Sarah Johnson,sarah.j@example.com,1720,SarahChess
+Michael Brown,mbrown@example.com,2100,MikeBrown
+
+# Instructions:
+# 1. For Excel files: Use the first row as headers (Name, Email, Rating, ChesscomUsername)
+# 2. For Word files: List one player per line with comma-separated values
+# 3. Name is required, Email, Rating, and ChesscomUsername are optional
+# 4. Rating should be a number between 0 and 3000
+# 5. ChesscomUsername is the player's username on Chess.com (without spaces) 
