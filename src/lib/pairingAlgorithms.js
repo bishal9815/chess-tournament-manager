@@ -1,11 +1,13 @@
 /**
  * Chess Tournament Pairing Algorithms
  * 
- * This file contains four different pairing algorithms for chess tournaments:
+ * This file contains six different pairing algorithms for chess tournaments:
  * 1. Swiss Pairing - Players with similar scores play each other, no rematches allowed
  * 2. Double Swiss Pairing - Similar to Swiss but allows up to 2 matches between the same players
  * 3. Round Robin Pairing - Each player faces every other player once (or twice in double round robin)
  * 4. Knockout Pairing - Single elimination tournament where winners advance and losers are eliminated
+ * 5. Scheveningen System - Each player from Team A plays against each player from Team B
+ * 6. Monrad (Danish) System - Leading players are paired with trailing players
  */
 
 /**
@@ -214,7 +216,7 @@ function generateSwissPairings(players, round) {
       pairings: [], 
       error: {
         message: "Error generating Swiss pairings: " + error.message
-      }
+      } 
     };
   }
 }
@@ -228,6 +230,7 @@ function generateFirstRoundPairings(players) {
   // Shuffle players for first round (can be replaced with seeding if ratings available)
   const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
   const pairings = [];
+  const pairedPlayerIds = new Set();
   
   // Handle odd number of players
   if (shuffledPlayers.length % 2 !== 0) {
@@ -235,13 +238,20 @@ function generateFirstRoundPairings(players) {
     const byePlayer = shuffledPlayers.pop();
     byePlayer.byes = 1;
     
+    // Create a unique ID for this bye pairing
+    const pairingKey = `${byePlayer.id}_bye_1`;
+    
     pairings.push({
       whitePlayer: byePlayer.id,
       blackPlayer: null,
       round: 1,
       board: pairings.length + 1,
-      isBye: true
+      isBye: true,
+      pairingKey: pairingKey // Add unique identifier
     });
+    
+    // Mark player as paired
+    pairedPlayerIds.add(byePlayer.id.toString());
   }
   
   // Pair remaining players
@@ -249,19 +259,43 @@ function generateFirstRoundPairings(players) {
     const whitePlayer = shuffledPlayers[i];
     const blackPlayer = shuffledPlayers[i + 1];
     
-    pairings.push({
-      whitePlayer: whitePlayer.id,
-      blackPlayer: blackPlayer.id,
-      round: 1,
-      board: pairings.length + 1
-    });
+    // Skip if either player is already paired (shouldn't happen in first round, but added for safety)
+    if (pairedPlayerIds.has(whitePlayer.id.toString()) || pairedPlayerIds.has(blackPlayer.id.toString())) {
+      continue;
+    }
     
-    // Update player records
-    whitePlayer.previousOpponents = [blackPlayer.id];
-    whitePlayer.colorHistory = ['white'];
+    // Create a unique ID for this pairing
+    const pairingKey = `${whitePlayer.id}_${blackPlayer.id}_1`;
     
-    blackPlayer.previousOpponents = [whitePlayer.id];
-    blackPlayer.colorHistory = ['black'];
+    // Check if this pairing (or its reverse) already exists
+    const pairingExists = pairings.some(p => 
+      (p.whitePlayer === whitePlayer.id && p.blackPlayer === blackPlayer.id) ||
+      (p.whitePlayer === blackPlayer.id && p.blackPlayer === whitePlayer.id)
+    );
+    
+    // Only create the pairing if it doesn't already exist
+    if (!pairingExists) {
+      pairings.push({
+        whitePlayer: whitePlayer.id,
+        blackPlayer: blackPlayer.id,
+        round: 1,
+        board: pairings.length + 1,
+        pairingKey: pairingKey // Add unique identifier
+      });
+      
+      // Update player records
+      whitePlayer.previousOpponents = [blackPlayer.id];
+      whitePlayer.colorHistory = ['white'];
+      
+      blackPlayer.previousOpponents = [whitePlayer.id];
+      blackPlayer.colorHistory = ['black'];
+      
+      // Mark players as paired
+      pairedPlayerIds.add(whitePlayer.id.toString());
+      pairedPlayerIds.add(blackPlayer.id.toString());
+    } else {
+      console.log(`Skipping duplicate pairing: ${whitePlayer.id} vs ${blackPlayer.id} in round 1`);
+    }
   }
   
   return { pairings, error: null };
@@ -372,30 +406,45 @@ function createPairingsForGroup(group, round, pairedPlayers) {
         const whitePlayer = determineWhitePlayer(player1, player2);
         const blackPlayer = whitePlayer.id === player1.id ? player2 : player1;
         
-        // Create pairing
-        pairings.push({
-          whitePlayer: whitePlayer.id,
-          blackPlayer: blackPlayer.id,
-          round: round,
-          board: pairings.length + 1
-        });
+        // Create a unique ID for this pairing to help identify duplicates
+        const pairingKey = `${whitePlayer.id}_${blackPlayer.id}_${round}`;
         
-        // Update player records
-        whitePlayer.previousOpponents = whitePlayer.previousOpponents || [];
-        whitePlayer.previousOpponents.push(blackPlayer.id);
-        whitePlayer.colorHistory = whitePlayer.colorHistory || [];
-        whitePlayer.colorHistory.push('white');
+        // Check if this pairing (or its reverse) already exists
+        const pairingExists = pairings.some(p => 
+          (p.whitePlayer === whitePlayer.id && p.blackPlayer === blackPlayer.id) ||
+          (p.whitePlayer === blackPlayer.id && p.blackPlayer === whitePlayer.id)
+        );
         
-        blackPlayer.previousOpponents = blackPlayer.previousOpponents || [];
-        blackPlayer.previousOpponents.push(whitePlayer.id);
-        blackPlayer.colorHistory = blackPlayer.colorHistory || [];
-        blackPlayer.colorHistory.push('black');
-        
-        // Mark players as paired
-        localPairedPlayers.add(whitePlayer.id.toString());
-        localPairedPlayers.add(blackPlayer.id.toString());
-        pairedPlayers.add(whitePlayer.id.toString());
-        pairedPlayers.add(blackPlayer.id.toString());
+        // Only create the pairing if it doesn't already exist
+        if (!pairingExists) {
+          // Create pairing
+          pairings.push({
+            whitePlayer: whitePlayer.id,
+            blackPlayer: blackPlayer.id,
+            round: round,
+            board: pairings.length + 1,
+            pairingKey: pairingKey // Add a unique key to help identify this pairing
+          });
+          
+          // Update player records
+          whitePlayer.previousOpponents = whitePlayer.previousOpponents || [];
+          whitePlayer.previousOpponents.push(blackPlayer.id);
+          whitePlayer.colorHistory = whitePlayer.colorHistory || [];
+          whitePlayer.colorHistory.push('white');
+          
+          blackPlayer.previousOpponents = blackPlayer.previousOpponents || [];
+          blackPlayer.previousOpponents.push(whitePlayer.id);
+          blackPlayer.colorHistory = blackPlayer.colorHistory || [];
+          blackPlayer.colorHistory.push('black');
+          
+          // Mark players as paired
+          localPairedPlayers.add(whitePlayer.id.toString());
+          localPairedPlayers.add(blackPlayer.id.toString());
+          pairedPlayers.add(whitePlayer.id.toString());
+          pairedPlayers.add(blackPlayer.id.toString());
+        } else {
+          console.log(`Skipping duplicate pairing: ${whitePlayer.id} vs ${blackPlayer.id} in round ${round}`);
+        }
         
         // Remove paired players from the group
         group = group.filter(p => 
@@ -448,17 +497,48 @@ function createForcedPairings(group, round) {
     const player1 = group[i];
     const player2 = group[i + 1];
     
-    // Determine colors (white/black)
-    const whitePlayer = determineWhitePlayer(player1, player2);
-    const blackPlayer = whitePlayer.id === player1.id ? player2 : player1;
+    // Skip if either player is already paired
+    if (pairedPlayerIds.has(player1.id.toString()) || pairedPlayerIds.has(player2.id.toString())) {
+      continue;
+    }
     
-    // Create pairing
+    // Determine colors (white/black)
+    let whitePlayer, blackPlayer;
+    
+    const player1Whites = player1.colorHistory ? 
+      player1.colorHistory.filter(c => c === 'white').length : 0;
+    const player2Whites = player2.colorHistory ? 
+      player2.colorHistory.filter(c => c === 'white').length : 0;
+    
+    // Assign colors to balance white/black games
+    if (player1Whites < player2Whites) {
+      whitePlayer = player1;
+      blackPlayer = player2;
+    } else if (player2Whites < player1Whites) {
+      whitePlayer = player2;
+      blackPlayer = player1;
+    } else {
+      // If equal, alternate from previous round
+      const player1LastColor = player1.colorHistory && player1.colorHistory.length > 0 ? 
+        player1.colorHistory[player1.colorHistory.length - 1] : null;
+      
+      if (player1LastColor === 'white') {
+        whitePlayer = player2;
+        blackPlayer = player1;
+      } else {
+        whitePlayer = player1;
+        blackPlayer = player2;
+      }
+    }
+    
+    // Add the pairing
     pairings.push({
       whitePlayer: whitePlayer.id,
       blackPlayer: blackPlayer.id,
       round: round,
       board: pairings.length + 1,
-      isRematch: havePlayedBefore(player1, player2) // Flag if this is a rematch
+      isRematch: havePlayedBefore(player1, player2), // Flag if this is a rematch
+      pairingKey: `${whitePlayer.id}_${blackPlayer.id}_${round}` // Add a unique key to help identify this pairing
     });
     
     // Update player records
@@ -473,17 +553,34 @@ function createForcedPairings(group, round) {
     blackPlayer.colorHistory.push('black');
     
     // Mark players as paired
-    pairedPlayerIds.add(player1.id.toString());
-    pairedPlayerIds.add(player2.id.toString());
+    pairedPlayerIds.add(whitePlayer.id.toString());
+    pairedPlayerIds.add(blackPlayer.id.toString());
   }
   
-  // Handle a possible leftover player (should not happen if we handled odd total properly)
-  if (group.length % 2 !== 0 && group.length > 0) {
-    const leftoverPlayer = group[group.length - 1];
-    console.log(`Warning: Leftover player ${leftoverPlayer.id} in forced pairings`);
+  // Handle odd number of players - should typically not happen in knockout
+  // but could occur if a player withdraws
+  if (group.length % 2 !== 0) {
+    const remainingPlayer = group[group.length - 1];
+    console.log(`Warning: Odd number of players in knockout round. Player ${remainingPlayer.id} gets a bye to next round.`);
+    
+    // Create a special "bye" pairing for the remaining player
+    pairings.push({
+      whitePlayer: remainingPlayer.id,
+      blackPlayer: null,
+      round: round,
+      board: pairings.length + 1,
+      isBye: true
+    });
+    
+    // Update player record
+    remainingPlayer.colorHistory = remainingPlayer.colorHistory || [];
+    remainingPlayer.colorHistory.push('white');
   }
   
-  return { pairings, pairedPlayerIds };
+  return {
+    pairings,
+    pairedPlayerIds
+  };
 }
 
 /**
@@ -725,7 +822,7 @@ function generateDoubleSwissPairings(players, round, cycleNumber, cycleRounds) {
         const player2 = group[opponentIndex];
         console.log(`Pairing players: ${player1.id} vs ${player2.id}`);
         
-        // Determine colors (white/black) based on previous games
+        // Determine colors (white/black)
         let whitePlayer, blackPlayer;
         
         const player1Whites = player1.colorHistory ? 
@@ -902,7 +999,7 @@ function generateSecondCycleFirstRoundPairings(players) {
         }
       }
       
-      // Determine colors (white/black)
+      // Determine colors
       let whitePlayer, blackPlayer;
       
       const player1Whites = topHalfPlayer.colorHistory ? 
@@ -1248,8 +1345,7 @@ function getWinnersFromPreviousRound(players, previousResults, previousRound) {
   const winnerIds = new Set();
   
   for (const result of relevantResults) {
-    // Skip incomplete results
-    if (!result.result) continue;
+    if (!result.result) continue; // Skip incomplete results
     
     if (result.isBye) {
       // Player with a bye automatically advances
@@ -1520,6 +1616,8 @@ function calculateKnockoutStandings(players, allResults, totalRounds) {
     const roundResults = allResults.filter(r => r && r.round === round);
     
     for (const result of roundResults) {
+      if (!result.result) continue; // Skip incomplete results
+      
       if (result.isBye) {
         byePlayers.add(result.whitePlayer);
         continue;
@@ -1534,7 +1632,9 @@ function calculateKnockoutStandings(players, allResults, totalRounds) {
         // Black won, white eliminated
         eliminationRound.set(result.whitePlayer, round);
       } else if (result.result === '1/2-1/2') {
-        // Draw - per our tiebreak rule, black is eliminated
+        // Draw - in knockout, we need a tiebreak rule
+        // For simplicity, we'll advance the white player (in practice, use rapid/blitz games)
+        console.log(`Draw in knockout match between ${result.whitePlayer} and ${result.blackPlayer}. White advances.`);
         eliminationRound.set(result.blackPlayer, round);
       }
     }
@@ -1643,6 +1743,818 @@ function generateSeededKnockoutPairings(players) {
   }
 }
 
+/**
+ * Generate pairings for a tournament round using the Scheveningen System
+ * In this system, each player from Team A plays against each player from Team B
+ * @param {Array} teamA - Array of player objects for Team A
+ * @param {Array} teamB - Array of player objects for Team B
+ * @param {Number} round - Current round number (1-based)
+ * @param {Array} previousResults - Results from previous rounds
+ * @returns {Object} - Contains pairings array and error object if applicable
+ */
+function generateScheveningenPairings(teamA, teamB, round, previousResults = []) {
+  console.log('Generating Scheveningen pairings for round', round);
+
+  // Validate input teams
+  if (!teamA || !Array.isArray(teamA) || teamA.length === 0) {
+    return { 
+      pairings: [], 
+      error: { message: "Team A has no valid players." } 
+    };
+  }
+
+  if (!teamB || !Array.isArray(teamB) || teamB.length === 0) {
+    return { 
+      pairings: [], 
+      error: { message: "Team B has no valid players." } 
+    };
+  }
+
+  // Ensure all players have the required properties
+  const validTeamA = teamA.filter(player => player && player.id);
+  const validTeamB = teamB.filter(player => player && player.id);
+
+  if (validTeamA.length === 0) {
+    return { 
+      pairings: [], 
+      error: { message: "Team A has no valid players with IDs." } 
+    };
+  }
+
+  if (validTeamB.length === 0) {
+    return { 
+      pairings: [], 
+      error: { message: "Team B has no valid players with IDs." } 
+    };
+  }
+
+  try {
+    // Calculate total rounds needed
+    const totalRounds = Math.ceil((validTeamA.length * validTeamB.length) / 
+                       Math.min(validTeamA.length, validTeamB.length));
+    
+    if (round < 1 || round > totalRounds) {
+      return { 
+        pairings: [], 
+        error: { message: `Invalid round number. Valid rounds are 1 to ${totalRounds}.` } 
+      };
+    }
+
+    // Create a set of completed pairings to avoid duplicates
+    const completedPairings = new Set();
+    
+    // Add all already played pairings to the set
+    if (previousResults && Array.isArray(previousResults)) {
+      for (const result of previousResults) {
+        if (result.whitePlayer && result.blackPlayer) {
+          const pairingKey = `${result.whitePlayer}-${result.blackPlayer}`;
+          completedPairings.add(pairingKey);
+        }
+      }
+    }
+    
+    // Generate all possible pairings
+    const possiblePairings = [];
+    for (let i = 0; i < validTeamA.length; i++) {
+      for (let j = 0; j < validTeamB.length; j++) {
+        const playerA = validTeamA[i];
+        const playerB = validTeamB[j];
+        const pairingKey = `${playerA.id}-${playerB.id}`;
+        
+        // Skip if this pairing has already been played
+        if (completedPairings.has(pairingKey)) continue;
+        
+        possiblePairings.push({
+          playerA,
+          playerB,
+          pairingKey
+        });
+      }
+    }
+    
+    // If no possible pairings remain, check if all matches have been played
+    if (possiblePairings.length === 0) {
+      if (completedPairings.size === validTeamA.length * validTeamB.length) {
+        return {
+          pairings: [],
+          tournamentCompleted: true,
+          error: null
+        };
+      } else {
+        return {
+          pairings: [],
+          error: { message: "No valid pairings can be created for this round." }
+        };
+      }
+    }
+    
+    // Calculate pairings per round
+    const pairingsPerRound = Math.min(validTeamA.length, validTeamB.length);
+    
+    // Get pairings for this round
+    const startIdx = (round - 1) * pairingsPerRound;
+    const endIdx = Math.min(startIdx + pairingsPerRound, possiblePairings.length);
+    const roundPairings = possiblePairings.slice(startIdx, endIdx);
+    
+    // Initialize pairings array
+    const pairings = [];
+    
+    // Convert to our standard pairing format
+    for (let i = 0; i < roundPairings.length; i++) {
+      const { playerA, playerB } = roundPairings[i];
+      
+      // Determine colors (white/black)
+      let whitePlayer, blackPlayer;
+      
+      // Balance colors based on previous games
+      const playerAWhites = playerA.colorHistory ? 
+        playerA.colorHistory.filter(c => c === 'white').length : 0;
+      const playerBWhites = playerB.colorHistory ? 
+        playerB.colorHistory.filter(c => c === 'white').length : 0;
+      
+      if (playerAWhites < playerBWhites) {
+        whitePlayer = playerA;
+        blackPlayer = playerB;
+      } else if (playerBWhites < playerAWhites) {
+        whitePlayer = playerB;
+        blackPlayer = playerA;
+      } else {
+        // If equal, alternate based on round
+        if ((round + i) % 2 === 0) {
+          whitePlayer = playerA;
+          blackPlayer = playerB;
+        } else {
+          whitePlayer = playerB;
+          blackPlayer = playerA;
+        }
+      }
+      
+      // Add the pairing
+      pairings.push({
+        whitePlayer: whitePlayer.id,
+        blackPlayer: blackPlayer.id,
+        round: round,
+        board: i + 1,
+        teamWhite: whitePlayer === playerA ? 'A' : 'B',
+        teamBlack: blackPlayer === playerA ? 'A' : 'B'
+      });
+      
+      // Update player records
+      whitePlayer.colorHistory = whitePlayer.colorHistory || [];
+      whitePlayer.colorHistory.push('white');
+      
+      blackPlayer.colorHistory = blackPlayer.colorHistory || [];
+      blackPlayer.colorHistory.push('black');
+    }
+    
+    return { pairings, error: null };
+  } catch (error) {
+    console.error('Error in Scheveningen pairing algorithm:', error);
+    return { 
+      pairings: [], 
+      error: { message: `Pairing Error: ${error.message || 'Unknown error in pairing algorithm'}` } 
+    };
+  }
+}
+
+/**
+ * Calculate the total number of rounds needed for a Scheveningen tournament
+ * @param {Number} teamASize - Number of players in Team A
+ * @param {Number} teamBSize - Number of players in Team B
+ * @returns {Number} - Total rounds needed
+ */
+function calculateScheveningenRounds(teamASize, teamBSize) {
+  const totalGames = teamASize * teamBSize;
+  const gamesPerRound = Math.min(teamASize, teamBSize);
+  
+  return Math.ceil(totalGames / gamesPerRound);
+}
+
+/**
+ * Calculate team scores and individual performance for a Scheveningen tournament
+ * @param {Array} teamA - Array of player objects for Team A
+ * @param {Array} teamB - Array of player objects for Team B
+ * @param {Array} results - Array of match results
+ * @returns {Object} - Team scores and individual player performances
+ */
+function calculateScheveningenResults(teamA, teamB, results) {
+  // Create maps of player IDs to team
+  const teamAMap = new Map(teamA.map(p => [String(p.id), p]));
+  const teamBMap = new Map(teamB.map(p => [String(p.id), p]));
+  
+  // Initialize team scores
+  let teamAScore = 0;
+  let teamBScore = 0;
+  let matchesCompleted = 0;
+  const totalMatches = teamA.length * teamB.length;
+  
+  // Track individual performance
+  const playerPerformance = {};
+  
+  // Initialize player performance records
+  for (const player of teamA) {
+    playerPerformance[player.id] = {
+      name: player.name || `Player ${player.id}`,
+      team: 'A',
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      score: 0,
+      opponents: []
+    };
+  }
+  
+  for (const player of teamB) {
+    playerPerformance[player.id] = {
+      name: player.name || `Player ${player.id}`,
+      team: 'B',
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      score: 0,
+      opponents: []
+    };
+  }
+  
+  // Process results
+  if (results && Array.isArray(results)) {
+    for (const result of results) {
+      if (!result.result) continue; // Skip incomplete results
+      
+      const whiteId = String(result.whitePlayer);
+      const blackId = String(result.blackPlayer);
+      
+      // Validate that the pairing is between teams A and B
+      const whiteInTeamA = teamAMap.has(whiteId);
+      const blackInTeamA = teamAMap.has(blackId);
+      
+      if ((whiteInTeamA && blackInTeamA) || (!whiteInTeamA && !blackInTeamA)) {
+        console.warn('Invalid Scheveningen pairing - both players from same team:', result);
+        continue;
+      }
+      
+      matchesCompleted++;
+      
+      // Update player records
+      const whitePlayer = playerPerformance[whiteId];
+      const blackPlayer = playerPerformance[blackId];
+      
+      if (whitePlayer) {
+        whitePlayer.played++;
+        whitePlayer.opponents.push(blackId);
+      }
+      
+      if (blackPlayer) {
+        blackPlayer.played++;
+        blackPlayer.opponents.push(whiteId);
+      }
+      
+      // Calculate scores based on result
+      if (result.result === '1-0') {
+        // White win
+        if (whiteInTeamA) {
+          teamAScore += 1;
+        } else {
+          teamBScore += 1;
+        }
+        
+        if (whitePlayer) {
+          whitePlayer.wins++;
+          whitePlayer.score += 1;
+        }
+        
+        if (blackPlayer) {
+          blackPlayer.losses++;
+        }
+      } else if (result.result === '0-1') {
+        // Black win
+        if (blackInTeamA) {
+          teamAScore += 1;
+        } else {
+          teamBScore += 1;
+        }
+        
+        if (blackPlayer) {
+          blackPlayer.wins++;
+          blackPlayer.score += 1;
+        }
+        
+        if (whitePlayer) {
+          whitePlayer.losses++;
+        }
+      } else if (result.result === '1/2-1/2') {
+        // Draw
+        teamAScore += 0.5;
+        teamBScore += 0.5;
+        
+        if (whitePlayer) {
+          whitePlayer.draws++;
+          whitePlayer.score += 0.5;
+        }
+        
+        if (blackPlayer) {
+          blackPlayer.draws++;
+          blackPlayer.score += 0.5;
+        }
+      }
+    }
+  }
+  
+  // Check for uncompleted matches
+  const uncompletedMatches = totalMatches - matchesCompleted;
+  
+  // Convert player performance to sorted arrays
+  const teamAPerformance = Object.values(playerPerformance)
+    .filter(p => p.team === 'A')
+    .sort((a, b) => b.score - a.score);
+  
+  const teamBPerformance = Object.values(playerPerformance)
+    .filter(p => p.team === 'B')
+    .sort((a, b) => b.score - a.score);
+  
+  return {
+    teamAScore,
+    teamBScore,
+    matchesCompleted,
+    uncompletedMatches,
+    totalMatches,
+    teamAPerformance,
+    teamBPerformance,
+    // Check if all possible games have been played
+    completed: matchesCompleted === totalMatches
+  };
+}
+
+/**
+ * Generate pairings for a tournament round using the Monrad (Danish) System
+ * In this system, leading players are paired with trailing players
+ * @param {Array} players - Array of player objects
+ * @param {Number} round - Current round number
+ * @param {Array} previousPairings - Array of previous pairings
+ * @returns {Object} - Contains pairings array and error object if applicable
+ */
+function generateMonradPairings(players, round, previousPairings = []) {
+  console.log('Generating Monrad (Danish) pairings for round', round);
+  
+  if (!players || !Array.isArray(players) || players.length === 0) {
+    console.log('No players provided for pairing');
+    return { pairings: [], error: null };
+  }
+  
+  // Ensure all players have the required properties
+  const validPlayers = players.filter(player => player && player.id);
+  
+  if (validPlayers.length === 0) {
+    console.log('No valid players found for pairing');
+    return { pairings: [], error: null };
+  }
+  
+  try {
+    // Sort players by score (descending)
+    const sortedPlayers = [...validPlayers].sort((a, b) => {
+      return (b.score || 0) - (a.score || 0);
+    });
+    
+    // Initialize pairings array
+    const pairings = [];
+    
+    // Track which players have been paired in this round
+    let pairedPlayers = new Set();
+    
+    // Create a helper function to check if two players have played before
+    const havePlayed = (player1, player2) => {
+      const player1Id = String(player1.id);
+      const player2Id = String(player2.id);
+      
+      // Check previous opponents list if available
+      if (player1.opponents && player1.opponents.includes(player2Id)) {
+        return true;
+      }
+      
+      // Check previous pairings array if available
+      if (previousPairings && Array.isArray(previousPairings)) {
+        return previousPairings.some(pairing => {
+          return (pairing.whitePlayer === player1Id && pairing.blackPlayer === player2Id) ||
+                 (pairing.whitePlayer === player2Id && pairing.blackPlayer === player1Id);
+        });
+      }
+      
+      return false;
+    };
+    
+    // Create a helper function for determining colors
+    const determineColors = (player1, player2) => {
+      const player1Whites = player1.colorHistory ? 
+        player1.colorHistory.filter(c => c === 'white').length : 0;
+      const player2Whites = player2.colorHistory ? 
+        player2.colorHistory.filter(c => c === 'white').length : 0;
+      
+      if (player1Whites < player2Whites) {
+        return [player1, player2]; // player1 is white
+      } else if (player2Whites < player1Whites) {
+        return [player2, player1]; // player2 is white
+      } else {
+        // If equal, alternate from previous round
+        const player1LastColor = player1.colorHistory && player1.colorHistory.length > 0 ? 
+          player1.colorHistory[player1.colorHistory.length - 1] : null;
+        
+        if (player1LastColor === 'white') {
+          return [player2, player1]; // player2 is white
+        } else {
+          return [player1, player2]; // player1 is white
+        }
+      }
+    };
+    
+    // Monrad (Danish) pairing logic
+    // In Monrad, we pair the top half with the bottom half when possible
+    // Top player plays middle player, second plays middle+1, etc.
+    const middleIndex = Math.floor(sortedPlayers.length / 2);
+    
+    for (let i = 0; i < middleIndex; i++) {
+      // Skip already paired players
+      if (pairedPlayers.has(sortedPlayers[i].id)) continue;
+      
+      const leadingPlayer = sortedPlayers[i];
+      
+      // Look for a valid trailing player
+      let trailingPlayerIndex = middleIndex;
+      let foundMatch = false;
+      
+      // Try to find a trailing player who hasn't played with the leading player
+      while (trailingPlayerIndex < sortedPlayers.length && !foundMatch) {
+        const trailingPlayer = sortedPlayers[trailingPlayerIndex];
+        
+        // If trailing player already paired or has played the leading player, move to next
+        if (pairedPlayers.has(trailingPlayer.id) || havePlayed(leadingPlayer, trailingPlayer)) {
+          trailingPlayerIndex++;
+          continue;
+        }
+        
+        pairedPlayers.add(leadingPlayer.id);
+        pairedPlayers.add(trailingPlayer.id);
+        
+        // Determine colors
+        const [whitePlayer, blackPlayer] = determineColors(leadingPlayer, trailingPlayer);
+        
+        // Create the pairing
+        pairings.push({
+          whitePlayer: whitePlayer.id,
+          blackPlayer: blackPlayer.id,
+          round: round,
+          board: pairings.length + 1
+        });
+        
+        // Update player records
+        whitePlayer.colorHistory = whitePlayer.colorHistory || [];
+        whitePlayer.colorHistory.push('white');
+        
+        blackPlayer.colorHistory = blackPlayer.colorHistory || [];
+        blackPlayer.colorHistory.push('black');
+        
+        // Add opponents to player records
+        if (!whitePlayer.opponents) whitePlayer.opponents = [];
+        if (!blackPlayer.opponents) blackPlayer.opponents = [];
+        
+        whitePlayer.opponents.push(blackPlayer.id);
+        blackPlayer.opponents.push(whitePlayer.id);
+        
+        foundMatch = true;
+      }
+      
+      // If no valid trailing player found, check any unpaired player
+      if (!foundMatch && !pairedPlayers.has(leadingPlayer.id)) {
+        for (let j = 0; j < sortedPlayers.length; j++) {
+          const potentialOpponent = sortedPlayers[j];
+          
+          if (potentialOpponent.id !== leadingPlayer.id && 
+              !pairedPlayers.has(potentialOpponent.id) &&
+              !havePlayed(leadingPlayer, potentialOpponent)) {
+            
+            pairedPlayers.add(leadingPlayer.id);
+            pairedPlayers.add(potentialOpponent.id);
+            
+            // Determine colors
+            const [whitePlayer, blackPlayer] = determineColors(leadingPlayer, potentialOpponent);
+            
+            // Create the pairing
+            pairings.push({
+              whitePlayer: whitePlayer.id,
+              blackPlayer: blackPlayer.id,
+              round: round,
+              board: pairings.length + 1
+            });
+            
+            // Update player records
+            whitePlayer.colorHistory = whitePlayer.colorHistory || [];
+            whitePlayer.colorHistory.push('white');
+            
+            blackPlayer.colorHistory = blackPlayer.colorHistory || [];
+            blackPlayer.colorHistory.push('black');
+            
+            // Add opponents to player records
+            if (!whitePlayer.opponents) whitePlayer.opponents = [];
+            if (!blackPlayer.opponents) blackPlayer.opponents = [];
+            
+            whitePlayer.opponents.push(blackPlayer.id);
+            blackPlayer.opponents.push(whitePlayer.id);
+            
+            break;
+          }
+        }
+      }
+    }
+    
+    // Pair any remaining players
+    const remainingPlayers = sortedPlayers.filter(p => !pairedPlayers.has(p.id));
+    
+    for (let i = 0; i < remainingPlayers.length - 1; i += 2) {
+      const player1 = remainingPlayers[i];
+      const player2 = remainingPlayers[i + 1];
+      
+      // Determine colors
+      const [whitePlayer, blackPlayer] = determineColors(player1, player2);
+      
+      // Create the pairing
+      pairings.push({
+        whitePlayer: whitePlayer.id,
+        blackPlayer: blackPlayer.id,
+        round: round,
+        board: pairings.length + 1
+      });
+      
+      // Update player records
+      whitePlayer.colorHistory = whitePlayer.colorHistory || [];
+      whitePlayer.colorHistory.push('white');
+      
+      blackPlayer.colorHistory = blackPlayer.colorHistory || [];
+      blackPlayer.colorHistory.push('black');
+      
+      // Add opponents to player records
+      if (!whitePlayer.opponents) whitePlayer.opponents = [];
+      if (!blackPlayer.opponents) blackPlayer.opponents = [];
+      
+      whitePlayer.opponents.push(blackPlayer.id);
+      blackPlayer.opponents.push(whitePlayer.id);
+    }
+    
+    // Handle odd number of players - assign a bye to the lowest-ranked available player
+    if (remainingPlayers.length % 2 !== 0) {
+      const byePlayer = remainingPlayers[remainingPlayers.length - 1];
+      
+      console.log(`Odd number of players. Player ${byePlayer.id} gets a bye.`);
+      
+      // Create a special "bye" pairing for the remaining player
+      pairings.push({
+        whitePlayer: byePlayer.id,
+        blackPlayer: null,
+        round: round,
+        board: pairings.length + 1,
+        isBye: true
+      });
+      
+      // Update player record
+      byePlayer.colorHistory = byePlayer.colorHistory || [];
+      byePlayer.colorHistory.push('white');
+      
+      // For Monrad system, a bye typically counts as a win (1 point)
+      byePlayer.score = (byePlayer.score || 0) + 1;
+    }
+    
+    return { pairings, error: null };
+  } catch (error) {
+    console.error('Error in Monrad pairing algorithm:', error);
+    return { 
+      pairings: [], 
+      error: {
+        message: `Pairing Error: ${error.message || 'Unknown error in pairing algorithm'}`
+      } 
+    };
+  }
+}
+
+/**
+ * Calculate standings for a Monrad (Danish) tournament
+ * @param {Array} players - Array of player objects with scores
+ * @param {Array} allResults - All match results
+ * @returns {Array} - Sorted array of players with performance statistics
+ */
+function calculateMonradStandings(players, allResults) {
+  if (!players || !Array.isArray(players) || players.length === 0) {
+    return [];
+  }
+  
+  // Create a deep copy of players to avoid modifying the original objects
+  const playersCopy = players.map(player => ({
+    ...player,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    playedGames: 0,
+    opponentTotalScore: 0, // For tiebreak calculation
+    buchholz: 0,            // Buchholz score (sum of opponents' scores)
+    sonneborn: 0,           // Sonneborn-Berger score (sum of defeated opponents' scores + half of drawn opponents' scores)
+    performance: 0          // Performance rating for Monrad tournaments
+  }));
+  
+  // Create a map for quick access to player data
+  const playerMap = new Map(playersCopy.map(player => [String(player.id), player]));
+  
+  // Process all results to calculate stats
+  if (allResults && Array.isArray(allResults)) {
+    for (const result of allResults) {
+      if (!result.result) continue; // Skip incomplete results
+      
+      const whitePlayer = playerMap.get(String(result.whitePlayer));
+      const blackPlayer = playerMap.get(String(result.blackPlayer));
+      
+      // Skip if either player is not found
+      if (!whitePlayer || (!blackPlayer && !result.isBye)) continue;
+      
+      if (result.isBye) {
+        // Handle byes
+        whitePlayer.wins++;
+        whitePlayer.playedGames++;
+        // No opponent score calculations for byes
+      } else {
+        // Regular game, update played count
+        whitePlayer.playedGames++;
+        blackPlayer.playedGames++;
+        
+        // Track opponents for buchholz calculation
+        if (!whitePlayer.opponents) whitePlayer.opponents = [];
+        if (!blackPlayer.opponents) blackPlayer.opponents = [];
+        
+        whitePlayer.opponents.push(blackPlayer.id);
+        blackPlayer.opponents.push(whitePlayer.id);
+        
+        // Update stats based on result
+        if (result.result === '1-0') {
+          // White win
+          whitePlayer.wins++;
+          blackPlayer.losses++;
+        } else if (result.result === '0-1') {
+          // Black win
+          blackPlayer.wins++;
+          whitePlayer.losses++;
+        } else if (result.result === '1/2-1/2') {
+          // Draw
+          whitePlayer.draws++;
+          blackPlayer.draws++;
+        }
+      }
+    }
+  }
+  
+  // Calculate scores for each player
+  for (const player of playersCopy) {
+    // Standard scoring (1 for win, 0.5 for draw, 0 for loss)
+    player.score = player.wins + (player.draws * 0.5);
+    
+    // Calculate opponent total score for tiebreaks
+    if (player.opponents) {
+      for (const opponentId of player.opponents) {
+        const opponent = playerMap.get(String(opponentId));
+        if (opponent) {
+          player.opponentTotalScore += opponent.score || 0;
+        }
+      }
+      
+      // Buchholz score = sum of opponents' scores
+      player.buchholz = player.opponentTotalScore;
+      
+      // Calculate Sonneborn-Berger score
+      // For each opponent, add their score if the player won, or half their score if drawn
+      for (const opponentId of player.opponents) {
+        const opponent = playerMap.get(String(opponentId));
+        if (!opponent) continue;
+        
+        // Find the game result between this player and the opponent
+        const gameResult = allResults.find(result => {
+          const whiteId = String(result.whitePlayer);
+          const blackId = String(result.blackPlayer);
+          return (whiteId === String(player.id) && blackId === opponentId) || 
+                 (whiteId === opponentId && blackId === String(player.id));
+        });
+        
+        if (!gameResult || !gameResult.result) continue;
+        
+        const playerWon = (gameResult.whitePlayer === player.id && gameResult.result === '1-0') ||
+                         (gameResult.blackPlayer === player.id && gameResult.result === '0-1');
+        const playerDrew = gameResult.result === '1/2-1/2';
+        
+        if (playerWon) {
+          player.sonneborn += opponent.score || 0;
+        } else if (playerDrew) {
+          player.sonneborn += (opponent.score || 0) / 2;
+        }
+      }
+    }
+    
+    // Calculate performance metric specific to Monrad tournaments
+    // In Monrad, we give extra weight to wins against higher-ranked players
+    player.performance = player.score;
+    
+    // Add adjustments based on opponent strength - this rewards players who beat strong opponents
+    if (player.opponents) {
+      let opponentRankBonus = 0;
+      
+      for (const opponentId of player.opponents) {
+        const opponent = playerMap.get(String(opponentId));
+        if (!opponent) continue;
+        
+        // Find the game result
+        const gameResult = allResults.find(result => {
+          const whiteId = String(result.whitePlayer);
+          const blackId = String(result.blackPlayer);
+          return (whiteId === String(player.id) && blackId === opponentId) || 
+                 (whiteId === opponentId && blackId === String(player.id));
+        });
+        
+        if (!gameResult || !gameResult.result) continue;
+        
+        const playerWon = (gameResult.whitePlayer === player.id && gameResult.result === '1-0') ||
+                         (gameResult.blackPlayer === player.id && gameResult.result === '0-1');
+        
+        if (playerWon) {
+          // Calculate opponent's initial rank (based on score) for bonus
+          const opponentInitialRank = playersCopy.filter(p => p.score > opponent.score).length + 1;
+          
+          // Wins against highly ranked players are worth more in Monrad system
+          // This is a small adjustment that doesn't affect the primary score
+          const rankBonus = 1 / opponentInitialRank; // Higher ranked players (lower rank number) give higher bonus
+          opponentRankBonus += rankBonus;
+        }
+      }
+      
+      // Add a fractional bonus that doesn't affect the main score but helps with tiebreaks
+      player.performance += opponentRankBonus * 0.01;
+    }
+  }
+  
+  // Sort players by score and tiebreakers
+  const sortedPlayers = [...playersCopy].sort((a, b) => {
+    // First by score
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    
+    // Then by Monrad performance (which includes opponent strength)
+    if (b.performance !== a.performance) {
+      return b.performance - a.performance;
+    }
+    
+    // Then by Buchholz score
+    if (b.buchholz !== a.buchholz) {
+      return b.buchholz - a.buchholz;
+    }
+    
+    // Then by Sonneborn-Berger score
+    if (b.sonneborn !== a.sonneborn) {
+      return b.sonneborn - a.sonneborn;
+    }
+    
+    // Then by direct encounter
+    const directEncounter = allResults.find(result => {
+      const whiteId = String(result.whitePlayer);
+      const blackId = String(result.blackPlayer);
+      return (whiteId === String(a.id) && blackId === String(b.id)) || 
+             (whiteId === String(b.id) && blackId === String(a.id));
+    });
+    
+    if (directEncounter && directEncounter.result) {
+      if (directEncounter.whitePlayer === a.id) {
+        if (directEncounter.result === '1-0') return -1;
+        if (directEncounter.result === '0-1') return 1;
+      } else {
+        if (directEncounter.result === '0-1') return -1;
+        if (directEncounter.result === '1-0') return 1;
+      }
+    }
+    
+    // Then by number of wins
+    if (b.wins !== a.wins) {
+      return b.wins - a.wins;
+    }
+    
+    // Finally alphabetically by name if available
+    if (a.name && b.name) {
+      return a.name.localeCompare(b.name);
+    }
+    
+    return 0;
+  });
+  
+  // Add ranks
+  sortedPlayers.forEach((player, index) => {
+    player.rank = index + 1;
+  });
+  
+  return sortedPlayers;
+}
+
 module.exports = { 
   generateSwissPairings,
   generateDoubleSwissPairings,
@@ -1651,5 +2563,10 @@ module.exports = {
   calculateKnockoutStandings,
   calculateDoubleSwissStandings,
   generateSeededKnockoutPairings,
-  calculateKnockoutRounds
+  calculateKnockoutRounds,
+  generateScheveningenPairings,
+  calculateScheveningenRounds,
+  calculateScheveningenResults,
+  generateMonradPairings,
+  calculateMonradStandings
 };
