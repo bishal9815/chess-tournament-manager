@@ -1035,6 +1035,19 @@ router.post('/:id/pairings', protect, async (req, res) => {
     
     // Create match documents
     const matches = [];
+    // Track the highest board number used so far in this round
+    let maxBoardNumber = 0;
+    
+    // First, find the max board number already used in this round to avoid duplicates
+    const existingBoardMatches = await Match.find({
+      tournament: tournament._id,
+      round: tournament.currentRound
+    }).sort({ board: -1 }).limit(1);
+    
+    if (existingBoardMatches.length > 0 && existingBoardMatches[0].board) {
+      maxBoardNumber = existingBoardMatches[0].board;
+      console.log(`Found existing matches for this round. Max board number: ${maxBoardNumber}`);
+    }
     
     for (const pairing of pairings) {
       if (!pairing.whitePlayer) {
@@ -1046,11 +1059,28 @@ router.post('/:id/pairings', protect, async (req, res) => {
       if (pairing.isBye) {
         console.log('Creating bye match for player:', pairing.whitePlayer);
         
+        // Check if a bye match already exists for this player in this round
+        const existingByeMatch = await Match.findOne({
+          tournament: tournament._id,
+          round: tournament.currentRound,
+          whitePlayer: pairing.whitePlayer,
+          isBye: true
+        });
+        
+        if (existingByeMatch) {
+          console.log(`Bye match already exists for player ${pairing.whitePlayer} in round ${tournament.currentRound}`);
+          matches.push(existingByeMatch);
+          continue;
+        }
+        
+        // Increment the board number
+        maxBoardNumber++;
+        
         // Create a match with only one player (the one who gets the bye)
         const match = await Match.create({
           tournament: tournament._id,
           round: tournament.currentRound,
-          board: pairing.board,
+          board: maxBoardNumber, // Use our tracked board number instead of pairing.board
           whitePlayer: pairing.whitePlayer,
           blackPlayer: null, // null indicates a bye
           result: 'BYE', // Special result for byes
@@ -1078,10 +1108,30 @@ router.post('/:id/pairings', protect, async (req, res) => {
         continue;
       }
       
+      // Check if this match (or its reverse) already exists for this tournament round
+      const existingMatch = await Match.findOne({
+        tournament: tournament._id,
+        round: tournament.currentRound,
+        $or: [
+          { whitePlayer: pairing.whitePlayer, blackPlayer: pairing.blackPlayer },
+          { whitePlayer: pairing.blackPlayer, blackPlayer: pairing.whitePlayer }
+        ]
+      });
+      
+      if (existingMatch) {
+        console.log(`Match already exists between players ${pairing.whitePlayer} and ${pairing.blackPlayer} in round ${tournament.currentRound}`);
+        matches.push(existingMatch);
+        continue;
+      }
+      
+      // Increment the board number
+      maxBoardNumber++;
+      
+      // Create the match if it doesn't exist
       const match = await Match.create({
         tournament: tournament._id,
         round: tournament.currentRound,
-        board: pairing.board,
+        board: maxBoardNumber, // Use our tracked board number instead of pairing.board
         whitePlayer: pairing.whitePlayer,
         blackPlayer: pairing.blackPlayer,
         result: '*'
