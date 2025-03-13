@@ -183,26 +183,42 @@
                 </div>
                 
                 <div class="col-md-6 mb-3">
-                  <label for="rounds" class="form-label">Number of Rounds</label>
-                  <input type="number" class="form-control" id="rounds" name="rounds" min="1" value="${tournament.rounds}" required>
+                  <label for="pairingAlgorithm" class="form-label">Pairing System</label>
+                  <select class="form-select" id="pairingAlgorithm" name="pairingAlgorithm" required>
+                    <option value="swiss" ${tournament.pairingAlgorithm === 'swiss' ? 'selected' : ''}>Swiss System</option>
+                    <option value="doubleSwiss" ${tournament.pairingAlgorithm === 'doubleSwiss' ? 'selected' : ''}>Double Swiss System</option>
+                    <option value="roundRobin" ${tournament.pairingAlgorithm === 'roundRobin' ? 'selected' : ''}>Round-Robin</option>
+                    <option value="knockout" ${tournament.pairingAlgorithm === 'knockout' ? 'selected' : ''}>Knockout (Single Elimination)</option>
+                    <option value="scheveningen" ${tournament.pairingAlgorithm === 'scheveningen' ? 'selected' : ''}>Scheveningen System</option>
+                    <option value="monrad" ${tournament.pairingAlgorithm === 'monrad' ? 'selected' : ''}>Monrad System (Danish)</option>
+                    <option value="random" ${tournament.pairingAlgorithm === 'random' ? 'selected' : ''}>Random Pairing</option>
+                    <option value="accelerated" ${tournament.pairingAlgorithm === 'accelerated' ? 'selected' : ''}>Accelerated Pairing</option>
+                  </select>
                 </div>
               </div>
               
               <div class="row">
                 <div class="col-md-6 mb-3">
+                  <label for="rounds" class="form-label">Number of Rounds</label>
+                  <input type="number" class="form-control" id="rounds" name="rounds" min="1" value="${tournament.rounds}" required>
+                </div>
+                
+                <div class="col-md-6 mb-3">
                   <label for="timeControl" class="form-label">Time Control (Optional)</label>
                   <input type="text" class="form-control" id="timeControl" name="timeControl" value="${tournament.timeControl || ''}">
                 </div>
-                
+              </div>
+              
+              <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="maxParticipants" class="form-label">Maximum Participants (0 for unlimited)</label>
                   <input type="number" class="form-control" id="maxParticipants" name="maxParticipants" min="0" value="${tournament.maxParticipants || 0}">
                 </div>
-              </div>
-              
-              <div class="mb-3">
-                <label for="entryFee" class="form-label">Entry Fee (Optional)</label>
-                <input type="number" class="form-control" id="entryFee" name="entryFee" min="0" step="0.01" value="${tournament.entryFee || 0}">
+                
+                <div class="col-md-6 mb-3">
+                  <label for="entryFee" class="form-label">Entry Fee (Optional)</label>
+                  <input type="number" class="form-control" id="entryFee" name="entryFee" min="0" step="0.01" value="${tournament.entryFee || 0}">
+                </div>
               </div>
               
               <div class="d-grid gap-2">
@@ -241,6 +257,7 @@
           endDate: document.getElementById('endDate').value,
           registrationDeadline: document.getElementById('registrationDeadline').value || null,
           format: document.getElementById('format').value,
+          pairingAlgorithm: document.getElementById('pairingAlgorithm').value,
           rounds: parseInt(document.getElementById('rounds').value),
           timeControl: document.getElementById('timeControl').value || null,
           maxParticipants: parseInt(document.getElementById('maxParticipants').value),

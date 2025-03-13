@@ -24,6 +24,79 @@
     #pairingErrorModal .modal-body {
       padding: 2.5rem;
     }
+    
+    /* Custom button styles with gradient and animation */
+    .btn-gradient-primary {
+      background-image: linear-gradient(to right, #4361ee, #3a0ca3);
+      border: none;
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(65, 97, 238, 0.3);
+    }
+    
+    .btn-gradient-primary:hover {
+      background-image: linear-gradient(to right, #3a0ca3, #4361ee);
+      transform: translateY(-2px);
+      box-shadow: 0 7px 15px rgba(65, 97, 238, 0.4);
+      color: white;
+    }
+    
+    .btn-gradient-success {
+      background-image: linear-gradient(to right, #38b000, #008000);
+      border: none;
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(56, 176, 0, 0.3);
+    }
+    
+    .btn-gradient-success:hover {
+      background-image: linear-gradient(to right, #008000, #38b000);
+      transform: translateY(-2px);
+      box-shadow: 0 7px 15px rgba(56, 176, 0, 0.4);
+      color: white;
+    }
+    
+    .round-container {
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      background-color: #ffffff;
+    }
+    
+    .round-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 10px;
+    }
+    
+    .round-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(65, 97, 238, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(65, 97, 238, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(65, 97, 238, 0);
+      }
+    }
+    
+    .btn-pulse {
+      animation: pulse 1.5s infinite;
+    }
   </style>
 </head>
 <body>
@@ -406,7 +479,7 @@
           const matchesTab = document.getElementById('matches');
           if (matchesTab) {
             const generatePairingsBtn = document.createElement('button');
-            generatePairingsBtn.className = 'btn btn-primary mt-3';
+            generatePairingsBtn.className = 'btn btn-gradient-primary mt-3';
             
             // Check if this is the last round
             const isLastRound = tournament.currentRound >= tournament.rounds;
@@ -634,9 +707,9 @@
     }
     
     // Render matches table
-    function renderMatches(matches, tournamentData) {
+    function renderMatches(matches, tournament) {
       if (!matches || matches.length === 0) {
-        return `<div class="alert alert-info">No matches scheduled yet.</div>`;
+        return '<div class="alert alert-info">No matches have been generated yet.</div>';
       }
       
       // Group matches by round
@@ -648,154 +721,130 @@
         matchesByRound[match.round].push(match);
       });
       
-      let html = `
-        <script>
-          // Initialize empty object to store pending results
-          const pendingResults = {};
-          
-          // Function to toggle a result in the pending results object
-          function togglePendingResult(matchId, result) {
-            // Get all buttons for this match
-            const buttons = document.querySelectorAll(\`[data-match-id="\${matchId}"]\`);
-            
-            // First, remove active class from all buttons for this match
-            buttons.forEach(btn => {
-              btn.classList.remove('active', 'btn-primary');
+      // Initialize pending results object if it doesn't exist
+      if (!window.pendingResults) {
+        window.pendingResults = {};
+      }
+      
+      // Toggle a result for pending submission
+      window.togglePendingResult = function(matchId, result) {
+        const buttons = document.querySelectorAll(`[data-match-id="${matchId}"]`);
+        
+        if (window.pendingResults[matchId] === result) {
+          // If same result is clicked again, unselect it
+          delete window.pendingResults[matchId];
+          buttons.forEach(btn => {
+            if (btn.getAttribute('data-result') === result) {
+              btn.classList.remove('active');
               btn.classList.add('btn-outline-primary');
-            });
-            
-            // Highlight the selected button
-            const selectedButton = document.querySelector(\`[data-match-id="\${matchId}"][data-result="\${result}"]\`);
-            if (selectedButton) {
-              selectedButton.classList.remove('btn-outline-primary');
-              selectedButton.classList.add('btn-primary', 'active');
+              btn.classList.remove('btn-primary');
             }
-            
-            // Store the result
-            pendingResults[matchId] = result;
-            
-            // Check if any pending results exist and show/hide the submit button
-            updateSubmitButton();
-          }
+          });
+        } else {
+          // Otherwise update the result
+          window.pendingResults[matchId] = result;
           
-          // Function to update submit button visibility
-          function updateSubmitButton() {
-            const submitBtn = document.getElementById('submit-results-btn');
-            const hasResults = Object.keys(pendingResults).length > 0;
-            
-            if (submitBtn) {
-              if (hasResults) {
-                submitBtn.style.display = 'block';
-                submitBtn.innerText = \`Submit \${Object.keys(pendingResults).length} Result\${Object.keys(pendingResults).length > 1 ? 's' : ''}\`;
-              } else {
-                submitBtn.style.display = 'none';
-              }
-            }
-          }
-          
-          // Function to submit all pending results
-          async function submitAllResults() {
-            const submitBtn = document.getElementById('submit-results-btn');
-            if (!submitBtn) return;
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
-            
-            const errorMessages = [];
-            const totalResults = Object.keys(pendingResults).length;
-            let completedCount = 0;
-            
-            // Create a promise for each result submission
-            const promises = Object.entries(pendingResults).map(async ([matchId, result]) => {
-              try {
-                const response = await fetch(\`/api/tournaments/matches/\${matchId}\`, {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': \`Bearer \${token}\`
-                  },
-                  body: JSON.stringify({ result })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                  throw new Error(data.error || 'Failed to record match result');
-                }
-                
-                completedCount++;
-                updateSubmitProgress(completedCount, totalResults);
-                
-                return data;
-              } catch (error) {
-                errorMessages.push(\`Match \${matchId}: \${error.message}\`);
-                completedCount++;
-                updateSubmitProgress(completedCount, totalResults);
-                throw error;
-              }
-            });
-            
-            // Wait for all submissions to complete
-            const results = await Promise.allSettled(promises);
-            
-            // Reset the submit button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Submit Results';
-            
-            // Clear the pending results
-            Object.keys(pendingResults).forEach(matchId => {
-              delete pendingResults[matchId];
-            });
-            
-            // Update the button visibility
-            updateSubmitButton();
-            
-            // Show results message
-            if (errorMessages.length === 0) {
-              showToast('All match results submitted successfully!', 'success');
-              
-              // Refresh the tournament details to show the updated standings
-              await fetchTournamentDetails();
+          // Update button states
+          buttons.forEach(btn => {
+            if (btn.getAttribute('data-result') === result) {
+              btn.classList.add('active');
+              btn.classList.remove('btn-outline-primary');
+              btn.classList.add('btn-primary');
             } else {
-              showToast(\`Some results could not be submitted: \${errorMessages.length} errors\`, 'danger');
-              console.error('Errors submitting results:', errorMessages);
+              btn.classList.remove('active');
+              btn.classList.add('btn-outline-primary');
+              btn.classList.remove('btn-primary');
             }
+          });
+        }
+        
+        // Update the submit button visibility
+        updateSubmitButton();
+      };
+      
+      // Submit all pending results
+      window.submitAllResults = async function(event) {
+        // Get the clicked button
+        const clickedBtn = event ? event.target : document.querySelector('.submit-results-btn');
+        if (!clickedBtn) return;
+        
+        // Disable the button and show loading state
+        clickedBtn.disabled = true;
+        clickedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+        
+        // Also disable all other submit buttons to prevent double submission
+        document.querySelectorAll('.submit-results-btn').forEach(btn => {
+          if (btn !== clickedBtn) {
+            btn.disabled = true;
           }
-          
-          // Function to update the submit progress
-          function updateSubmitProgress(completed, total) {
-            const submitBtn = document.getElementById('submit-results-btn');
-            if (submitBtn) {
-              submitBtn.innerHTML = \`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting \${completed}/\${total}...\`;
+        });
+        
+        const errorMessages = [];
+        const totalResults = Object.keys(window.pendingResults).length;
+        let completedCount = 0;
+        
+        // Process each result one by one
+        for (const [matchId, result] of Object.entries(window.pendingResults)) {
+          try {
+            const response = await fetch('/api/tournaments/matches/' + matchId, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ result })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+              errorMessages.push('Match ' + matchId + ': ' + (data.error || 'Failed to record match result'));
             }
+            
+            completedCount++;
+            clickedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting ' + completedCount + '/' + totalResults + '...';
+            
+          } catch (error) {
+            errorMessages.push('Match ' + matchId + ': ' + error.message);
+            completedCount++;
           }
-        </script>
-      `;
+        }
+        
+        // Reset all submit buttons
+        document.querySelectorAll('.submit-results-btn').forEach(btn => {
+          btn.disabled = false;
+          btn.innerHTML = 'Submit Results';
+        });
+        
+        // Clear the pending results
+        window.pendingResults = {};
+        updateSubmitButton();
+        
+        // Show results message
+        if (errorMessages.length === 0) {
+          showToast('All match results submitted successfully!', 'success');
+          // Refresh the tournament details to show the updated standings
+          await fetchTournamentDetails();
+        } else {
+          showToast('Some results could not be submitted: ' + errorMessages.length + ' errors', 'danger');
+          console.error('Errors submitting results:', errorMessages);
+        }
+      };
       
-      // Add submit button container
-      html += `
-        <div id="submit-results-container" class="mb-4">
-          <button id="submit-results-btn" class="btn btn-success" style="display: none;" onclick="submitAllResults()">
-            Submit Results
-          </button>
-        </div>
-      `;
+      let html = '';
       
+      // Render matches by round
       Object.keys(matchesByRound).sort((a, b) => a - b).forEach(round => {
-        html += `
-          <h4 class="mt-4">Round ${round}</h4>
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Board</th>
-                  <th>White</th>
-                  <th>Black</th>
-                  <th>Result</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
+        // Start round container
+        html += '<div class="round-container">';
+        html += '<div class="round-header">';
+        html += '<h4 class="m-0">Round ' + round + '</h4>';
+        html += '</div>';
+        
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-striped">';
+        html += '<thead><tr><th>Board</th><th>White</th><th>Black</th><th>Result</th></tr></thead>';
+        html += '<tbody>';
         
         matchesByRound[round].forEach(match => {
           let result = 'Not played';
@@ -819,34 +868,59 @@
             }
           }
           
-          // Add result entry buttons for tournament organizers, modified to use the new toggle system
-          const isOrganizer = token && tournamentData && tournamentData.organizer && tournamentData.organizer._id === user.id;
-          const resultButtons = isOrganizer && !match.isBye && (match.result === '*' || !match.result) ? `
-            <div class="btn-group btn-group-sm mt-2">
-              <button class="btn btn-outline-primary" onclick="togglePendingResult('${match._id}', 'white')" data-match-id="${match._id}" data-result="white">1-0</button>
-              <button class="btn btn-outline-primary" onclick="togglePendingResult('${match._id}', 'draw')" data-match-id="${match._id}" data-result="draw">½-½</button>
-              <button class="btn btn-outline-primary" onclick="togglePendingResult('${match._id}', 'black')" data-match-id="${match._id}" data-result="black">0-1</button>
-            </div>
-          ` : '';
+          // Add result entry buttons for tournament organizers
+          const isOrganizer = token && tournament && tournament.organizer && tournament.organizer._id === user.id;
+          let resultButtons = '';
           
-          html += `
-            <tr>
-              <td>${match.board}</td>
-              <td>${match.whitePlayer ? `${match.whitePlayer.firstName} ${match.whitePlayer.lastName}` : 'BYE'}</td>
-              <td>${match.blackPlayer ? `${match.blackPlayer.firstName} ${match.blackPlayer.lastName}` : match.isBye ? 'BYE' : 'N/A'}</td>
-              <td>
-                ${result}
-                ${resultButtons}
-              </td>
-            </tr>
-          `;
+          if (isOrganizer && !match.isBye && (match.result === '*' || !match.result)) {
+            resultButtons = '<div class="btn-group btn-group-sm mt-2">';
+            resultButtons += '<button class="btn btn-outline-primary" onclick="togglePendingResult(\'' + match._id + '\', \'white\')" data-match-id="' + match._id + '" data-result="white">1-0</button>';
+            resultButtons += '<button class="btn btn-outline-primary" onclick="togglePendingResult(\'' + match._id + '\', \'draw\')" data-match-id="' + match._id + '" data-result="draw">½-½</button>';
+            resultButtons += '<button class="btn btn-outline-primary" onclick="togglePendingResult(\'' + match._id + '\', \'black\')" data-match-id="' + match._id + '" data-result="black">0-1</button>';
+            resultButtons += '</div>';
+          }
+          
+          // Render the match row
+          html += '<tr>';
+          html += '<td>' + (match.board || '-') + '</td>';
+          
+          // White player
+          html += '<td>';
+          if (match.whitePlayer) {
+            html += match.whitePlayer.firstName + ' ' + match.whitePlayer.lastName;
+            if (match.whitePlayer.chessRating) {
+              html += ' <span class="text-muted">(' + match.whitePlayer.chessRating + ')</span>';
+            }
+          } else {
+            html += 'BYE';
+          }
+          html += '</td>';
+          
+          // Black player
+          html += '<td>';
+          if (match.blackPlayer) {
+            html += match.blackPlayer.firstName + ' ' + match.blackPlayer.lastName;
+            if (match.blackPlayer.chessRating) {
+              html += ' <span class="text-muted">(' + match.blackPlayer.chessRating + ')</span>';
+            }
+          } else {
+            html += match.isBye ? 'BYE' : 'N/A';
+          }
+          html += '</td>';
+          
+          // Result
+          html += '<td>' + result + resultButtons + '</td>';
+          html += '</tr>';
         });
         
-        html += `
-              </tbody>
-            </table>
-          </div>
-        `;
+        html += '</tbody></table></div>';
+        
+        // Add the round footer with submit button
+        html += '<div class="round-footer">';
+        html += '<button class="btn btn-gradient-success submit-results-btn" style="display: none;" onclick="submitAllResults(event)">Submit Results</button>';
+        html += '</div>';
+        
+        html += '</div>'; // Close round container
       });
       
       return html;
@@ -855,10 +929,22 @@
     // Render participants list
     function renderParticipants(participants) {
       if (!participants || participants.length === 0) {
-        return `<div class="alert alert-info">No participants registered yet.</div>`;
+        return '<div class="alert alert-info">No participants registered yet.</div>';
       }
       
-      let html = `
+      let html = '';
+      
+      // Add a legend for the tiebreak abbreviations
+      html += `
+        <div class="mb-3">
+          <h5>Participants</h5>
+          <div class="small text-muted">
+            
+          
+            
+            
+          </div>
+        </div>
         <div class="table-responsive">
           <table class="table table-striped">
             <thead>
@@ -1120,7 +1206,7 @@
         // Hide the modal
         confirmationModal.hide();
         
-        const generateBtn = document.querySelector('#matches button.btn-primary');
+        const generateBtn = document.querySelector('#matches button.btn-gradient-primary');
         if (generateBtn) {
           generateBtn.disabled = true;
           generateBtn.textContent = 'Generating pairings...';
@@ -1336,7 +1422,7 @@
           confirmationModal.hide();
           
           // Find and disable the finish button
-          const finishBtn = document.querySelector('#matches button.btn-primary');
+          const finishBtn = document.querySelector('#matches button.btn-gradient-primary');
           if (finishBtn) {
             console.log('Found finish button, disabling it');
             finishBtn.disabled = true;
@@ -2049,72 +2135,71 @@
       }
     }
     
-    // Initialize the page
-    async function initPage() {
-      try {
-        // Get tournament details
-        const tournament = await fetchTournamentDetails();
-        
-        // Check if user is logged in
-        const isLoggedIn = !!token;
-        
-        // Render tournament details
-        renderTournamentDetails(tournament);
-        
-        // Render participants
-        renderParticipants(tournament.participants, isOrganizer);
-        
-        // Render pairings if available
-        if (tournament.pairings && tournament.pairings.length > 0) {
-          renderPairings(tournament.pairings, tournament.currentRound);
-        }
-        
-        // Render standings if available
-        if (tournament.participants && tournament.participants.length > 0) {
-          renderStandings(tournament.participants);
-        }
-        
-        // Render Google Docs tab
-        document.getElementById('google-tab-content').innerHTML = renderGoogleSheets(tournament, isOrganizer);
-        
-        // Add event listeners
-        addEventListeners(tournament, isOrganizer);
-        
-        // Add Google Docs event listeners
-        addGoogleDocsEventListeners();
-        
-        // Show the tournament details
-        document.getElementById('loading-container').style.display = 'none';
-        document.getElementById('tournament-container').style.display = 'block';
-      } catch (error) {
-        console.error('Error initializing page:', error);
-        document.getElementById('loading-container').style.display = 'none';
-        document.getElementById('error-container').style.display = 'block';
-        document.getElementById('error-message').textContent = error.message;
-      }
-    }
-    
     // Run initialization
     document.addEventListener('DOMContentLoaded', function() {
       // Fetch tournament details when the page loads
-      fetchTournamentDetails().then(data => {
-        if (data) {
-          renderTournamentDetails(data);
-          
-          // Initialize listeners for result buttons
-          initResultButtons();
-        }
-      });
+      fetchTournamentDetails();
     });
     
-    // Initialize result listeners
-    function initResultButtons() {
-      // Remove existing click listeners to prevent duplicates
-      document.querySelectorAll('.btn-result').forEach(btn => {
-        const clone = btn.cloneNode(true);
-        btn.parentNode.replaceChild(clone, btn);
-      });
+    // Function to initialize the page
+    async function initPage() {
+      try {
+        // Get tournament details
+        const data = await fetchTournamentDetails();
+        if (data) {
+          renderTournamentDetails(data);
+        }
+      } catch (error) {
+        console.error('Error initializing page:', error);
+        showToast('Error loading tournament details. Please try again.', 'danger');
+      }
     }
+    
+    // Execute init when DOM is loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+      initPage();
+    }
+  </script>
+  
+  <!-- Additional script for the updateSubmitButton function -->
+  <script>
+    // This function is used to update the visibility of submit buttons in each round
+    window.updateSubmitButton = function() {
+      const count = Object.keys(window.pendingResults || {}).length;
+      
+      if (count > 0) {
+        // Show the submit button in all round containers that have pending results
+        document.querySelectorAll('.round-container').forEach(container => {
+          // Check if this round has any pending results
+          const roundMatches = container.querySelectorAll('[data-match-id]');
+          let roundHasPendingResults = false;
+          
+          roundMatches.forEach(element => {
+            const matchId = element.getAttribute('data-match-id');
+            if (window.pendingResults && window.pendingResults[matchId]) {
+              roundHasPendingResults = true;
+            }
+          });
+          
+          // If this round has pending results, show the submit button
+          const submitBtn = container.querySelector('.submit-results-btn');
+          if (submitBtn && roundHasPendingResults) {
+            submitBtn.style.display = 'block';
+            submitBtn.innerText = 'Submit Results';
+            // Add pulse animation
+            submitBtn.classList.add('btn-pulse');
+          }
+        });
+      } else {
+        // Hide all submit buttons
+        document.querySelectorAll('.submit-results-btn').forEach(btn => {
+          btn.style.display = 'none';
+          btn.classList.remove('btn-pulse');
+        });
+      }
+    };
   </script>
 </body>
 </html>
